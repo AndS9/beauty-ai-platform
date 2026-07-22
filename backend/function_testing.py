@@ -1,3 +1,4 @@
+import time
 from typing import Any
 
 import requests
@@ -69,7 +70,7 @@ def find_places_near_location(
         OVERPASS_URL,
         data=query,
         headers=HEADERS,
-        timeout=60,
+        timeout=600,
     )
 
     response.raise_for_status()
