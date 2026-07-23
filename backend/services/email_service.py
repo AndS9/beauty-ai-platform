@@ -40,7 +40,7 @@ if __name__ == '__main__':
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
     django.setup()
     send_email(
-        recipient="oleksandrkukliuk@gmail.com",
+        recipient="example@gmail.com",
         subject="Test email",
         context={
             "customer_name": "Oleksandr",
