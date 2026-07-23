@@ -117,3 +117,4 @@ staticfiles/
 # Celery Beat
 celerybeat-schedule
 celerybeat-schedule.*
+backend/celerybeat-schedule*
