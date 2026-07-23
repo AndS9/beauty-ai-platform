@@ -127,3 +127,12 @@ CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = "Europe/Kyiv"
+
+from datetime import timedelta
+
+CELERY_BEAT_SCHEDULE = {
+    "say-hello-every-10-seconds": {
+        "task": "tasks.test_task.hello",
+        "schedule": timedelta(seconds=3),
+    },
+}
