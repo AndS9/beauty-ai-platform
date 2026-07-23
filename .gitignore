@@ -113,3 +113,7 @@ media/
 
 # Static files (if generated)
 staticfiles/
+
+# Celery Beat
+celerybeat-schedule
+celerybeat-schedule.*
