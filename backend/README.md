@@ -5,7 +5,7 @@
 To build the Docker images and start all required services (Django, Celery, Celery Beat, and Redis), run the following command from the project root:
 
 ```bash
-docker compose -f backend/docker-compose.yml up --build
+docker compose -f docker-compose.yml up --build
 ```
 
 This command will:
