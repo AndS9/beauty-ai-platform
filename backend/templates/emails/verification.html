@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify your email</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f4f4;font-family:Arial,Helvetica,sans-serif;">
+
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f4f4f4;padding:40px 0;">
+    <tr>
+        <td align="center">
+
+            <table role="presentation"
+                   width="600"
+                   cellspacing="0"
+                   cellpadding="0"
+                   style="background:#ffffff;border-radius:10px;padding:40px;">
+
+                <tr>
+                    <td align="center">
+                        <h1 style="margin:0;color:#222;">
+                            Beauty AI Platform
+                        </h1>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td style="padding-top:30px;">
+                        <h2 style="margin:0;color:#333;">
+                            Verify your email address
+                        </h2>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td style="padding-top:20px;font-size:16px;color:#555;line-height:1.6;">
+                        Thank you for registering.
+
+                        <br><br>
+
+                        Please confirm your email address by clicking the button below.
+                    </td>
+                </tr>
+
+                <tr>
+                    <td align="center" style="padding:40px 0;">
+                        <a href="{{ verification_url }}"
+                           style="
+                               display:inline-block;
+                               padding:14px 32px;
+                               background:#2563eb;
+                               color:#ffffff;
+                               text-decoration:none;
+                               border-radius:6px;
+                               font-size:16px;
+                               font-weight:bold;
+                           ">
+                            Verify Email
+                        </a>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td style="font-size:14px;color:#777;line-height:1.6;">
+                        If the button doesn't work, copy and paste the following link into your browser:
+                    </td>
+                </tr>
+
+                <tr>
+                    <td style="padding-top:10px;word-break:break-all;">
+                        <a href="{{ verification_url }}">
+                            {{ verification_url }}
+                        </a>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td style="padding-top:40px;font-size:14px;color:#777;">
+                        If you didn't create an account, you can safely ignore this email.
+                    </td>
+                </tr>
+
+                <tr>
+                    <td style="padding-top:30px;font-size:14px;color:#999;">
+                        © {% now "Y" %} Beauty AI Platform
+                    </td>
+                </tr>
+
+            </table>
+
+        </td>
+    </tr>
+</table>
+
+</body>
+</html>

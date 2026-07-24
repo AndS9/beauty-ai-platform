@@ -160,3 +160,6 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": timedelta(seconds=20),
     },
 }
+
+FRONTEND_URL=""
+BACKEND_URL="http://localhost:8000"
