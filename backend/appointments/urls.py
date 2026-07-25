@@ -4,6 +4,7 @@ from .views import (
     ClientAppointmentListView,
     RescheduleAppointmentView,
     CancelAppointmentView,
+    AvailableSlotsView,
 )
 
 urlpatterns = [
@@ -15,5 +16,8 @@ urlpatterns = [
     ),
     path(
         "<int:pk>/cancel/", CancelAppointmentView.as_view(), name="appointment-cancel"
+    ),
+    path(
+        "available-slots/", AvailableSlotsView.as_view(), name="available-slots"
     ),
 ]
