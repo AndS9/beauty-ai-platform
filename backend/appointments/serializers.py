@@ -20,3 +20,15 @@ class AppointmentSerializer(serializers.ModelSerializer):
             "created_at",
         ]
         read_only_fields = ["id", "client", "created_at"]
+
+
+class RescheduleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Appointment
+        fields = ["appointment_date", "start_time", "end_time"]
+
+
+class CancelSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Appointment
+        fields = []

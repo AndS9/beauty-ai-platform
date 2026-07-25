@@ -8,7 +8,11 @@ from rest_framework import (
 from rest_framework.permissions import IsAuthenticated
 
 from .models import Appointment
-from .serializers import AppointmentSerializer
+from .serializers import (
+    AppointmentSerializer,
+    RescheduleSerializer,
+    CancelSerializer
+)
 
 
 class ClientAppointmentListView(generics.ListAPIView):
@@ -42,7 +46,7 @@ class RescheduleAppointmentView(generics.UpdateAPIView):
     Request body: {"appointment_date": "2026-08-01", "start_time": "14:00", "end_time": "15:00"}
     """
 
-    serializer_class = AppointmentSerializer
+    serializer_class = RescheduleSerializer
     permission_classes = [IsAuthenticated]
     http_method_names = ["patch"]
 
@@ -68,7 +72,7 @@ class CancelAppointmentView(generics.UpdateAPIView):
     The request body is optional.
     """
 
-    serializer_class = AppointmentSerializer
+    serializer_class = CancelSerializer
     permission_classes = [IsAuthenticated]
     http_method_names = ["patch"]
 
