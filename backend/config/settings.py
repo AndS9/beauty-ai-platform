@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from pathlib import Path
 from dotenv import load_dotenv
+from datetime import timedelta
 import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -42,9 +43,11 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "drf_spectacular",
     "rest_framework",
     "django_filters",
     "appointments",
+    "users",
     "salons",
     "beauty_service",
 ]
@@ -122,6 +125,28 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+AUTH_USER_MODEL = "users.User"
+
+REST_FRAMEWORK = {
+    # "DEFAULT_RENDERER_CLASSES": [
+    #     "rest_framework.renderers.JSONRenderer",
+    # ],
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ),
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 10,
+}
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(hours=1),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    "ROTATE_REFRESH_TOKENS": False,
+}
+
 EMAIL_HOST = os.environ.get("EMAIL_HOST")
 EMAIL_PORT = int(os.environ.get("EMAIL_PORT", 587))
 EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER")
@@ -129,23 +154,23 @@ EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD")
 EMAIL_USE_TLS = True
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
-CELERY_BROKER_URL = "redis://redis:6379/0"
-CELERY_RESULT_BACKEND = "redis://redis:6379/0"
+CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL")
+CELERY_RESULT_BACKEND = os.environ.get("CELERY_RESULT_BACKEND")
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
-CELERY_TIMEZONE = "Europe/Kyiv"
+CELERY_TIMEZONE = os.environ.get("CELERY_TIMEZONE")
 
-from datetime import timedelta
+# CELERY_BEAT_SCHEDULE = {
+#     "say-hello-every-10-seconds": {
+#         "task": "tasks.test_task.hello",
+#         "schedule": timedelta(seconds=20),
+#     },
+# }
 
-CELERY_BEAT_SCHEDULE = {
-    "say-hello-every-10-seconds": {
-        "task": "tasks.test_task.hello",
-        "schedule": timedelta(seconds=20),
-    },
-}
+FRONTEND_URL = os.environ.get("FRONTEND_URL")
+BACKEND_URL = os.environ.get("BACKEND_URL")
 
-REST_FRAMEWORK = {
-    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
-    "PAGE_SIZE": 10,
-}
+GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID")
+
+SECURE_REFERRER_POLICY = "no-referrer-when-downgrade"
