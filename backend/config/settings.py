@@ -47,7 +47,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "django_filters",
     "appointments",
-    "users"
+    "users",
     "salons",
     "beauty_service",
 ]
