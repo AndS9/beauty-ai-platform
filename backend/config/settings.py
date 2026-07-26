@@ -48,6 +48,8 @@ INSTALLED_APPS = [
     "django_filters",
     "appointments",
     "users"
+    "salons",
+    "beauty_service",
 ]
 
 MIDDLEWARE = [
