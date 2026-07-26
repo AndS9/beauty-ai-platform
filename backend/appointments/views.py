@@ -1,4 +1,7 @@
-from datetime import datetime, timedelta
+from datetime import (
+    datetime,
+    timedelta
+)
 
 from django.db.models import QuerySet
 from django_filters.rest_framework import DjangoFilterBackend
@@ -99,16 +102,21 @@ class CancelAppointmentView(generics.UpdateAPIView):
 
 class AvailableSlotsView(APIView):
     """
-    GET /api/appointments/available-slots/?salon=1&master=3&service=5&date=2026-08-01
+    GET /api/appointments/available-slots/?salon=1&master=3&service=5&date_from=2026-08-01&date_to=2026-08-03
 
-    Returns a list of available time slots for booking.
+    Returns a list of available time slots for booking, grouped by date.
     Required query params:
-      - salon   — salon id (to get working hours)
-      - master  — master id (to get already booked intervals)
-      - service — service id (to get slot duration)
-      - date    — date in YYYY-MM-DD format
+      - salon     — salon id (to get working hours)
+      - master    — master id (to get already booked intervals)
+      - service   — service id (to get slot duration)
+      - date_from — start date, format YYYY-MM-DD
+      - date_to   — end date, format YYYY-MM-DD (inclusive; if omitted, same as date_from)
 
-    Response: [{"start": "10:00", "end": "10:45"}, {"start": "10:45", "end": "11:30"}, ...]
+    Response:
+      {
+        "2026-08-01": [{"start": "10:00", "end": "10:45"}, ...],
+        "2026-08-02": []   ← empty list if the salon is closed that day
+      }
     """
 
     permission_classes = [IsAuthenticated]
@@ -118,17 +126,24 @@ class AvailableSlotsView(APIView):
         salon_id = request.query_params.get("salon")
         master_id = request.query_params.get("master")
         service_id = request.query_params.get("service")
-        date_str = request.query_params.get("date")
+        date_from_str = request.query_params.get("date_from")
+        date_to_str = request.query_params.get("date_to") or date_from_str
 
-        if not all([salon_id, master_id, service_id, date_str]):
+        if not all([salon_id, master_id, service_id, date_from_str]):
             raise serializers.ValidationError(
-                "Потрібно передати параметри: salon, master, service, date."
+                "Потрібно передати параметри: salon, master, service, date_from."
             )
 
         try:
-            target_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+            date_from = datetime.strptime(date_from_str, "%Y-%m-%d").date()
+            date_to = datetime.strptime(date_to_str, "%Y-%m-%d").date()
         except ValueError:
-            raise serializers.ValidationError("Невірний формат date, очікується YYYY-MM-DD.")
+            raise serializers.ValidationError(
+                "Невірний формат дати, очікується YYYY-MM-DD."
+            )
+
+        if date_to < date_from:
+            raise serializers.ValidationError("date_to не може бути раніше date_from.")
 
         try:
             salon = Salon.objects.get(pk=salon_id)
@@ -141,46 +156,74 @@ class AvailableSlotsView(APIView):
             raise serializers.ValidationError("Послугу з таким id не знайдено.")
 
         duration = timedelta(minutes=service.duration_minutes)
+        step = timedelta(minutes=15)
 
-        # already booked intervals for this master on this date (canceled ones are excluded)
-        busy_appointments = Appointment.objects.filter(
-            master_id=master_id,
-            appointment_date=target_date,
-        ).exclude(status="cancelled").order_by("start_time")
+        # preload the weekly schedule for this salon once, keyed by weekday number
+        # noinspection PyUnresolvedReferences
+        working_hours_by_weekday = {
+            wh.weekday: wh for wh in salon.working_hours.all()
+        }
 
-        busy_intervals = [
-            (
-                datetime.combine(target_date, a.start_time),
-                datetime.combine(target_date, a.end_time),
+        result = {}
+        current_date = date_from
+
+        while current_date <= date_to:
+            weekday = current_date.weekday()  # Monday=0 ... Sunday=6, matches our choices
+            schedule = working_hours_by_weekday.get(weekday)
+
+            # if there is no schedule entry for this weekday, or the salon
+            # is marked as closed, there are simply no slots that day
+            # noinspection PyUnresolvedReferences
+            if schedule is None or schedule.is_closed:
+                result[current_date.isoformat()] = []
+                current_date += timedelta(days=1)
+                continue
+
+            # already booked intervals for this master on this date (canceled ones are excluded)
+            busy_appointments = (
+                Appointment.objects.filter(master_id=master_id, appointment_date=current_date)
+                .exclude(status="cancelled")
+                .order_by("start_time")
             )
-            for a in busy_appointments
-        ]
 
-        work_start = datetime.combine(target_date, salon.opening_time)
-        work_end = datetime.combine(target_date, salon.closing_time)
-
-        slots = []
-        cursor = work_start
-
-        while cursor + duration <= work_end:
-            slot_end = cursor + duration
-
-            # check whether this slot overlaps with any busy interval
-            overlaps = any(
-                cursor < busy_end and slot_end > busy_start
-                for busy_start, busy_end in busy_intervals
-            )
-
-            if not overlaps:
-                slots.append(
-                    {
-                        "start": cursor.time().strftime("%H:%M"),
-                        "end": slot_end.time().strftime("%H:%M"),
-                    }
+            busy_intervals = [
+                (
+                    datetime.combine(current_date, a.start_time),
+                    datetime.combine(current_date, a.end_time),
                 )
-                cursor = slot_end
-            else:
-                # shift forward by 5 minutes and try again
-                cursor += timedelta(minutes=5)
+                for a in busy_appointments
+            ]
 
-        return Response(slots)
+            # noinspection PyUnresolvedReferences
+            work_start = datetime.combine(current_date, schedule.opening_time)
+            # noinspection PyUnresolvedReferences
+            work_end = datetime.combine(current_date, schedule.closing_time)
+
+            slots = []
+            cursor = work_start
+
+            while cursor + duration <= work_end:
+                slot_end = cursor + duration
+
+                # check whether this slot overlaps with any busy interval
+                overlaps = any(
+                    cursor < busy_end and slot_end > busy_start
+                    for busy_start, busy_end in busy_intervals
+                )
+
+                if not overlaps:
+                    slots.append(
+                        {
+                            "start": cursor.time().strftime("%H:%M"),
+                            "end": slot_end.time().strftime("%H:%M"),
+                        }
+                    )
+
+                # always move forward by a fixed step, regardless of whether
+                # the slot was free or not
+                cursor += step
+
+            result[current_date.isoformat()] = slots
+            current_date += timedelta(days=1)
+
+        return Response(result)

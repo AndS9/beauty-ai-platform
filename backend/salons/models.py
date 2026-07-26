@@ -21,3 +21,47 @@ class Salon(models.Model):
 
     def __str__(self) -> str:
         return self.name
+
+
+class SalonWorkingHours(models.Model):
+    MONDAY = 0
+    TUESDAY = 1
+    WEDNESDAY = 2
+    THURSDAY = 3
+    FRIDAY = 4
+    SATURDAY = 5
+    SUNDAY = 6
+
+    WEEKDAY_CHOICES = [
+        (MONDAY, "Monday"),
+        (TUESDAY, "Tuesday"),
+        (WEDNESDAY, "Wednesday"),
+        (THURSDAY, "Thursday"),
+        (FRIDAY, "Friday"),
+        (SATURDAY, "Saturday"),
+        (SUNDAY, "Sunday"),
+    ]
+
+    salon = models.ForeignKey(
+        Salon,
+        related_name="working_hours",
+        on_delete=models.CASCADE,
+    )
+    weekday = models.PositiveSmallIntegerField(choices=WEEKDAY_CHOICES)
+    is_closed = models.BooleanField(default=False)
+    opening_time = models.TimeField(null=True, blank=True)
+    closing_time = models.TimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = "salon_working_hours"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["salon", "weekday"], name="unique_salon_weekday"
+            ),
+        ]
+
+    # noinspection PyUnresolvedReferences
+    def __str__(self) -> str:
+        if self.is_closed:
+            return f"{self.salon.name} — {self.get_weekday_display()}: closed"
+        return f"{self.salon.name} — {self.get_weekday_display()}: {self.opening_time}-{self.closing_time}"
