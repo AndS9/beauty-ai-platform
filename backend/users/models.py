@@ -11,4 +11,11 @@ class User(AbstractUser):
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
 
+    google_id = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        unique=True,
+    )
+
     objects = UserManager()

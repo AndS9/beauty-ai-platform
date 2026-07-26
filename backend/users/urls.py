@@ -9,6 +9,8 @@ from users.views import (
     CreateUserView,
     ManageUserView,
     VerifyEmailView,
+    GoogleTestView,
+    GoogleLoginView,
 )
 
 app_name = "users"
@@ -24,4 +26,6 @@ urlpatterns = [
         VerifyEmailView.as_view(),
         name="verify-email",
     ),
+    path("google-login/", GoogleLoginView.as_view(), name="google-login"),
+    path("google-test/", GoogleTestView.as_view(), name="google-test"),
 ]

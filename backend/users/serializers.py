@@ -23,3 +23,7 @@ class UserSerializer(serializers.ModelSerializer):
             user.save()
 
         return user
+
+
+class GoogleLoginSerializer(serializers.Serializer):
+    id_token = serializers.CharField()
