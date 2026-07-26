@@ -17,7 +17,7 @@ class Appointment(models.Model):
         on_delete=models.CASCADE,
     )
     master = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
+        "users.Master",
         related_name="master_appointments",
         on_delete=models.CASCADE,
     )
