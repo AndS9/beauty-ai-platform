@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     "users",
     "salons",
     "beauty_service",
+    "reviews"
 ]
 
 MIDDLEWARE = [
