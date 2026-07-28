@@ -8,7 +8,6 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from users.serializers import UserSerializer, GoogleLoginSerializer
 from users.services.auth_service import UserAuthService
@@ -20,8 +19,12 @@ class CreateUserView(generics.CreateAPIView):
 
 class ManageUserView(generics.RetrieveUpdateAPIView):
     serializer_class = UserSerializer
-    authentication_classes = (JWTAuthentication,)
     permission_classes = (IsAuthenticated,)
+
+    def get(self, request, *args, **kwargs):
+        print(request.headers.get("Authorization"))
+        print(request.user)
+        return super().get(request, *args, **kwargs)
 
     def get_object(self):
         return self.request.user

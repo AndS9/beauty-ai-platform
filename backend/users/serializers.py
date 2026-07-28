@@ -7,8 +7,8 @@ from users.services.auth_service import UserRegistrationService
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = get_user_model()
-        fields = ("id", "email", "password", "is_staff")
-        read_only_fields = ("is_staff",)
+        fields = ("id", "email", "password", "is_staff", "is_active")
+        read_only_fields = ("is_staff", "is_active")
         extra_kwargs = {"password": {"write_only": True, "min_length": 5}}
 
     def create(self, validated_data):
