@@ -1,26 +1,61 @@
+from django.conf import settings
 from django.db import models
+from django.db.models import Q, F
 
 
-class Salon(models.Model):
+class AbstractSalon(models.Model):
     name = models.CharField(max_length=100)
     city = models.CharField(max_length=50)
     district = models.CharField(max_length=50, null=True, blank=True)
     address = models.CharField(max_length=150)
-    phone = models.CharField(max_length=20)
-    opening_time = models.TimeField()
-    closing_time = models.TimeField()
-    opened_date = models.DateField()
-    latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
-    longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    phone = models.CharField(
+        max_length=20,
+        blank=True,
+        null=True,
+    )
+    opened_date = models.DateField(
+        null=True,
+        blank=True,
+    )
+    latitude = models.DecimalField(max_digits=9, decimal_places=6)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6)
+
+    class Meta:
+        abstract = True
+
+    def __str__(self) -> str:
+        return self.name
+
+
+class Salon(AbstractSalon):
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="salons",
+    )
 
     class Meta:
         db_table = "salons"
         constraints = [
-            models.UniqueConstraint(fields=["name", "address"], name="unique_salon_name_address"),
+            models.UniqueConstraint(fields=["name", "address"], name="unique_partner_salon_name_address"),
         ]
 
-    def __str__(self) -> str:
-        return self.name
+
+class CachedSalon(AbstractSalon):
+    last_used_at = models.DateTimeField(
+        auto_now_add=True,
+        db_index=True,
+    )
+    opening_hours = models.JSONField(
+        null=True,
+        blank=True,
+    )
+
+    class Meta:
+        db_table = "cached_salons"
+        constraints = [
+            models.UniqueConstraint(fields=["name", "address"], name="unique_cached_salon_name_address"),
+        ]
 
 
 class SalonWorkingHours(models.Model):
@@ -56,7 +91,19 @@ class SalonWorkingHours(models.Model):
         db_table = "salon_working_hours"
         constraints = [
             models.UniqueConstraint(
-                fields=["salon", "weekday"], name="unique_salon_weekday"
+                fields=["salon", "weekday"],
+                name="unique_salon_weekday",
+            ),
+            models.CheckConstraint(
+                condition=(
+                        Q(is_closed=True)
+                        | (
+                                Q(opening_time__isnull=False)
+                                & Q(closing_time__isnull=False)
+                                & Q(opening_time__lt=F("closing_time"))
+                        )
+                ),
+                name="valid_salon_working_hours",
             ),
         ]
 
