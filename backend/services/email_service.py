@@ -1,36 +1,22 @@
-from typing import Any, Mapping
-
-from django.core.mail import EmailMultiAlternatives
-from django.template.loader import render_to_string
+from tasks.notification import send_email_task
 
 
-def send_email(
-        recipient: str,
-        subject: str,
-        context: Mapping[str, Any],
-        template_name: str = "emails/notification.html",
-        body: str | None = None,
-) -> None:
-    """
-    Send an HTML email using the configured SMTP server.
-
-    Args:
-        recipient: Recipient email address.
-        subject: Email subject.
-        context: Context passed to the Django template.
-        template_name: Path to the HTML template.
-        body: Plain-text fallback for email clients without HTML support.
-    """
-    html = render_to_string(template_name, context)
-
-    message = EmailMultiAlternatives(
-        subject=subject,
-        body=body or "Your email client does not support HTML emails.",
-        to=[recipient],
-    )
-
-    message.attach_alternative(html, "text/html")
-    message.send()
+class EmailService:
+    @staticmethod
+    def send_email(
+            recipient: str,
+            subject: str,
+            context: dict,
+            template_name: str = "emails/notification.html",
+            body: str | None = None,
+    ) -> None:
+        send_email_task.delay(
+            recipient=recipient,
+            subject=subject,
+            context=context,
+            template_name=template_name,
+            body=body,
+        )
 
 
 if __name__ == '__main__':
@@ -39,7 +25,7 @@ if __name__ == '__main__':
 
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
     django.setup()
-    send_email(
+    EmailService.send_email(
         recipient="example@gmail.com",
         subject="Test email",
         context={

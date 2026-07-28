@@ -1,6 +1,7 @@
 from celery import shared_task
 
-from services.email_service import send_email
+from django.template.loader import render_to_string
+from django.core.mail import EmailMultiAlternatives
 
 
 @shared_task
@@ -11,10 +12,13 @@ def send_email_task(
         template_name: str = "emails/notification.html",
         body: str | None = None,
 ) -> None:
-    send_email(
-        recipient=recipient,
+    html = render_to_string(template_name, context)
+
+    message = EmailMultiAlternatives(
         subject=subject,
-        context=context,
-        template_name=template_name,
-        body=body,
+        body=body or "Your email client does not support HTML emails.",
+        to=[recipient],
     )
+
+    message.attach_alternative(html, "text/html")
+    message.send()
