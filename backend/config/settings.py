@@ -175,3 +175,5 @@ BACKEND_URL = os.environ.get("BACKEND_URL")
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID")
 
 SECURE_REFERRER_POLICY = "no-referrer-when-downgrade"
+
+GEOAPIFY_API_KEY = os.environ.get("GEOAPIFY_API_KEY")
