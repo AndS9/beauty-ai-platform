@@ -7,12 +7,6 @@ from typing import Any
 
 from django.conf import settings
 
-import os
-import django
-
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
-django.setup()
-
 
 class PlacesService:
     _NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
@@ -255,16 +249,3 @@ class PlacesService:
         raise RuntimeError(
             "No places provider is available."
         ) from last_exception
-
-
-if __name__ == "__main__":
-
-    with requests.Session() as session:
-        place_service_first = PlacesService("Київ", session=session)
-        place_service_second = PlacesService("Шепетівка", session=session)
-
-        for place in place_service_first.find_places(300):
-            print(place)
-        print("="*100)
-        for place in place_service_second.find_places(300):
-            print(place)
