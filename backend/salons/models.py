@@ -19,6 +19,10 @@ class AbstractSalon(models.Model):
     )
     latitude = models.DecimalField(max_digits=9, decimal_places=6)
     longitude = models.DecimalField(max_digits=9, decimal_places=6)
+    external_booking_url = models.URLField(
+        null=True,
+        blank=True,
+    )
 
     class Meta:
         abstract = True
