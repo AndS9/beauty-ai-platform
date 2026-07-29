@@ -36,4 +36,5 @@ urlpatterns = [
     path("api/salons/", include("salons.urls")),
     path("api/reviews/", include("reviews.urls")),
     path("api/promotions/", include("promotions.urls", namespace="promotions")),
+    path("api/payments/", include("payments.urls", namespace="payments")),
 ]

@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     "beauty_service",
     "reviews",
     "promotions",
+    "payments",
 ]
 
 MIDDLEWARE = [
