@@ -8,6 +8,14 @@ class PaymentMethod(models.TextChoices):
     GOOGLE_PAY = "google_pay", "Google Pay"
 
 
+class PaymentStatus(models.TextChoices):
+    PENDING = "pending", "Pending"
+    COMPLETED = "completed", "Completed"
+    FAILED = "failed", "Failed"
+    CANCELLED = "cancelled", "Cancelled"
+    REFUNDED = "refunded", "Refunded"
+
+
 class Payment(models.Model):
     appointment = models.ForeignKey(
         "appointments.Appointment",
@@ -20,6 +28,11 @@ class Payment(models.Model):
         max_length=20,
         choices=PaymentMethod.choices,
     )
+    payment_status = models.CharField(
+        max_length=20,
+        choices=PaymentStatus.choices,
+        default=PaymentStatus.PENDING,
+    )
     payment_date = models.DateTimeField(
         auto_now_add=True,
     )
@@ -31,5 +44,6 @@ class Payment(models.Model):
         return (
             f"Appointment #{self.appointment_id} - "
             f"{self.amount} {self.currency} "
-            f"({self.get_payment_method_display()})"
+            f"({self.get_payment_method_display()}, "
+            f"{self.get_payment_status_display()})"
         )

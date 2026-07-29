@@ -8,6 +8,10 @@ class PaymentSerializer(serializers.ModelSerializer):
         source="get_payment_method_display",
         read_only=True,
     )
+    payment_status_display = serializers.CharField(
+        source="get_payment_status_display",
+        read_only=True,
+    )
 
     class Meta:
         model = Payment
@@ -18,6 +22,13 @@ class PaymentSerializer(serializers.ModelSerializer):
             "currency",
             "payment_method",
             "payment_method_display",
+            "payment_status",
+            "payment_status_display",
             "payment_date",
         )
-        read_only_fields = ("id", "payment_date", "payment_method_display")
+        read_only_fields = (
+            "id",
+            "payment_method_display",
+            "payment_status_display",
+            "payment_date",
+        )
