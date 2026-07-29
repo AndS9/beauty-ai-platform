@@ -35,6 +35,7 @@ class Salon(AbstractSalon):
     )
     masters = models.ManyToManyField(
         "users.Master",
+        through="users.MasterSalon",
         related_name="salons",
     )
 

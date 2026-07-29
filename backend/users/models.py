@@ -79,6 +79,9 @@ class Master(models.Model):
         through="MasterService",
         related_name="masters",
     )
+    is_active = models.BooleanField(
+        default=True,
+    )
 
     def __str__(self):
         name = self.user.get_full_name() or self.user.email
@@ -87,6 +90,37 @@ class Master(models.Model):
             if self.specialization
             else name
         )
+
+
+class MasterSalon(models.Model):
+    master = models.ForeignKey(
+        Master,
+        on_delete=models.CASCADE,
+        related_name="master_salons",
+    )
+    salon = models.ForeignKey(
+        "salons.Salon",
+        on_delete=models.CASCADE,
+        related_name="master_salons",
+    )
+    hire_date = models.DateField(
+        null=True,
+        blank=True,
+    )
+    is_active = models.BooleanField(
+        default=True,
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["master", "salon"],
+                name="unique_master_salon",
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.master} @ {self.salon}"
 
 
 class MasterService(models.Model):

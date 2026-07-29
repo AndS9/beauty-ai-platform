@@ -6,7 +6,7 @@ from .models import Salon
 class SalonSerializer(serializers.ModelSerializer):
     class Meta:
         model = Salon
-        fields = [
+        fields = (
             "id",
             "name",
             "city",
@@ -18,5 +18,8 @@ class SalonSerializer(serializers.ModelSerializer):
             "longitude",
             "owner",
             "masters",
-        ]
-        read_only_fields = ["id"]
+        )
+        read_only_fields = (
+            "id",
+            "masters",
+        )
