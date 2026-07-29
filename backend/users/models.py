@@ -6,6 +6,11 @@ from .managers import UserManager
 from phonenumber_field.modelfields import PhoneNumberField
 
 
+class GenderChoice(models.TextChoices):
+    MAN = "man", "Man"
+    WOMAN = "woman", "Woman"
+
+
 class User(AbstractUser):
     username = None
     email = models.EmailField(_("email address"), unique=True)
@@ -20,11 +25,42 @@ class User(AbstractUser):
         blank=True,
         unique=True,
     )
+    gender = models.CharField(
+        max_length=10,
+        choices=GenderChoice.choices,
+        blank=True,
+        null=True,
+    )
+    birth_date = models.DateField(
+        null=True,
+        blank=True,
+    )
+    preferred_salons = models.ManyToManyField(
+        "salons.Salon",
+        blank=True,
+        related_name="followers",
+    )
+    last_latitude = models.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        null=True,
+        blank=True,
+    )
+
+    last_longitude = models.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        null=True,
+        blank=True,
+    )
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
 
     objects = UserManager()
+
+    def __str__(self):
+        return f"{self.get_full_name()} ({self.email})" if self.get_full_name() else self.email
 
 
 class Master(models.Model):
@@ -43,6 +79,14 @@ class Master(models.Model):
         through="MasterService",
         related_name="masters",
     )
+
+    def __str__(self):
+        name = self.user.get_full_name() or self.user.email
+        return (
+            f"{name} — {self.specialization}"
+            if self.specialization
+            else name
+        )
 
 
 class MasterService(models.Model):

@@ -21,11 +21,6 @@ class ManageUserView(generics.RetrieveUpdateAPIView):
     serializer_class = UserSerializer
     permission_classes = (IsAuthenticated,)
 
-    def get(self, request, *args, **kwargs):
-        print(request.headers.get("Authorization"))
-        print(request.user)
-        return super().get(request, *args, **kwargs)
-
     def get_object(self):
         return self.request.user
 
