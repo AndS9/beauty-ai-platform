@@ -33,6 +33,10 @@ class Salon(AbstractSalon):
         on_delete=models.CASCADE,
         related_name="salons",
     )
+    masters = models.ManyToManyField(
+        "users.Master",
+        related_name="salons",
+    )
 
     class Meta:
         db_table = "salons"

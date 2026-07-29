@@ -14,7 +14,7 @@ class SalonListCreateView(generics.ListCreateAPIView):
     perhaps allow also verified masters, not only is_staff
     """
 
-    queryset = Salon.objects.all()
+    queryset = Salon.objects.prefetch_related("masters")
     serializer_class = SalonSerializer
     permission_classes = [IsAdminOrReadOnlyAll]
 
@@ -26,6 +26,6 @@ class SalonDetailView(generics.RetrieveUpdateDestroyAPIView):
     DELETE /api/salons/<id>/ — deletion, only for admins (is_staff)
     """
 
-    queryset = Salon.objects.all()
+    queryset = Salon.objects.prefetch_related("masters")
     serializer_class = SalonSerializer
     permission_classes = [IsAdminOrReadOnlyAll]

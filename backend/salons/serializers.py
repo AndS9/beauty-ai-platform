@@ -16,6 +16,7 @@ class SalonSerializer(serializers.ModelSerializer):
             "opened_date",
             "latitude",
             "longitude",
-            "owner"
+            "owner",
+            "masters",
         ]
         read_only_fields = ["id"]
