@@ -37,4 +37,5 @@ urlpatterns = [
     path("api/reviews/", include("reviews.urls")),
     path("api/promotions/", include("promotions.urls", namespace="promotions")),
     path("api/payments/", include("payments.urls", namespace="payments")),
+    path("api/referral-events/", include("referral_events.urls", namespace="referral_events")),
 ]

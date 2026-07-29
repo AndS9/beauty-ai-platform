@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     "reviews",
     "promotions",
     "payments",
+    "referral_events",
 ]
 
 MIDDLEWARE = [
