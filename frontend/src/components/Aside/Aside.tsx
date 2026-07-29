@@ -35,6 +35,9 @@ export const Aside: React.FC<Props> = ({ isMenuOpen, onClose }) => {
           <Link to="/tablets" onClick={onClose}>
             <div className="nav__link--phone">TABLETS</div>
           </Link>
+          <Link to="/search" onClick={onClose}>
+            <div className="nav__link--phone">SEARCH SALONS</div>
+          </Link>
           <Link to="/accessories" onClick={onClose}>
             <div className="nav__link--phone">ACCESSORIES</div>
           </Link>
