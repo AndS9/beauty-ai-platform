@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/indent */
 /* eslint-disable max-len */
-import { useCart } from '../../../Functional/CartContext/CartContext';
+import { useCart } from './src/pages/FunctionalPages/CartPage/CartContext';
 import { Link } from 'react-router-dom';
 import './FavoritesPage.scss';
 import { useEffect, useState } from 'react';

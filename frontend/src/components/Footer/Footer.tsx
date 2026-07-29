@@ -12,7 +12,7 @@ export const Footer = () => {
     <footer className="footer">
       <div className="footer__container">
         <div className="footer__img">
-          <img src="./icons/Logo.svg" alt="Nice-Gadgets-Logo" />
+          <img src="./icons/logo.png" alt="Nice-Gadgets-Logo" />
         </div>
 
         <div className="footer__links">

@@ -11,7 +11,7 @@ import { HomePage } from './pages/HomePage/HomePage';
 /* import { AccessoriesPage } from './pages/AccessoriesPage/Accessories'; */
 /* import { ProductDetailsPage } from './pages/ProductDetailsPage/ProductDetailsPage'; */
 /* import { CartPage } from './pages/FunctionalPages/CartPage/CartPage'; */
-/* import { FavoritesPage } from './pages/FunctionalPages/FavoritesPage/FavoritesPage'; */
+import { FavoritesPage } from './pages/FunctionalPages/FavoritesPage/FavoritesPage';
 /* import { NotFoundPage } from './pages/NotFoundPage/NotFoundPage'; */
 
 const GOOGLE_CLIENT_ID =
@@ -30,7 +30,7 @@ const Root = () => (
           {/* <Route path="accessories" element={<AccessoriesPage />} /> */}
           {/* <Route path="products/:productId" element={<ProductDetailsPage />} /> */}
           {/* <Route path="cart" element={<CartPage />} /> */}
-          {/* <Route path="favorites" element={<FavoritesPage />} /> */}
+          {<Route path="favorites" element={<FavoritesPage />} /> }
           {/* <Route path="*" element={<NotFoundPage />} /> */}
         </Route>
       </Routes>

@@ -41,7 +41,7 @@ const results = [
       'Дизайн від 100 грн',
     ],
     available: 'Доступний сьогодні о 18:00',
-    badge: 'Популярний',
+    badge: 'AI Рекомендація',
   },
   {
     title: 'Chop-Chop Barbershop',
@@ -56,8 +56,11 @@ const results = [
       'Комплекс від 700 грн',
     ],
     available: 'Доступний сьогодні',
-    badge: 'Рекомендовано',
+    badge: 'AI Рекомендація',
   },
+];
+
+const result = [
   {
     title: 'Luna Beauty House',
     category: 'Салон краси',
@@ -71,7 +74,7 @@ const results = [
       'Пілінг від 500 грн',
     ],
     available: 'Завтра з 10:00',
-    badge: 'Новинка',
+    badge: 'Топовий',
   },
   {
     title: 'Perfect Nails',
@@ -86,7 +89,7 @@ const results = [
       'Дизайн від 150 грн',
     ],
     available: 'Доступний сьогодні',
-    badge: 'Топовий',
+    badge: 'Популярний',
   },
   {
     title: 'Перукарня "Стиль"',
@@ -101,12 +104,22 @@ const results = [
       'Укладання від 400 грн',
     ],
     available: 'Вільні місця',
-    badge: 'Популярна',
+    badge: 'Рекомендовано',
   },
 ];
 
 export const HomePage = () => {
   const [price, setPrice] = useState(1200);
+
+const [favorites, setFavorites] = useState<string[]>([]);
+
+const toggleFavorite = (id: string) => {
+  setFavorites(prev =>
+    prev.includes(id)
+      ? prev.filter(item => item !== id)
+      : [...prev, id]
+  );
+};
 
   return (
     <div className="home-page">
@@ -157,6 +170,7 @@ export const HomePage = () => {
                   'Макіяж',
                   'Косметологія',
                   'Масаж',
+                  'Брови та вії',
                 ].map(name => (
                   <label key={name} className="home-page__checkbox-item">
                     <input
@@ -245,64 +259,134 @@ export const HomePage = () => {
           </div>
         </aside>
 
-        <main className="home-page__results">
-          <div className="home-page__results-header">
-            <div>
-              <p className="home-page__results-count">
-                Знайдено 128 результатів
-              </p>
-              <p className="home-page__results-subtitle">
-                Сортування: Рекомендовані
-              </p>
-            </div>
-            <div className="home-page__tab-list">
-              <button
-                type="button"
-                className="home-page__tab home-page__tab--active"
-              >
-                Всі результати
-              </button>
-              <button type="button" className="home-page__tab">
-                AI Рекомендації
-              </button>
-            </div>
-          </div>
 
-          <div className="home-page__cards-grid">
-            {results.map(item => (
-              <article key={item.title} className="home-page__result-card">
-                <div className="home-page__result-card-top">
-                  <div className="home-page__result-card-badge">
-                    {item.badge}
+        <div>
+          <main className="home-page__results">
+            <div className="home-page__results-header">
+              <div>
+                <p className="home-page__results-count">
+                  Знайдено 128 результатів
+                </p>
+                <p className="home-page__results-subtitle">
+                  Сортування: Рекомендовані
+                </p>
+              </div>
+              <div className="home-page__tab-list">
+                <button
+                  type="button"
+                  className="home-page__tab home-page__tab--active"
+                >
+                  Всі результати
+                </button>
+                <button type="button" className="home-page__tab">
+                  AI Рекомендації
+                </button>
+              </div>
+            </div>
+
+            <div className="home-page__cards-grid">
+              {result.map(item => (
+                <article key={item.title} className="home-page__result-card">
+                  <div className="home-page__result-card-top">
+                    <div className="home-page__result-card-badge">
+                      {item.badge}
+                    </div>
+                    <button
+                      className="heart-circle"
+                      onClick={() => toggleFavorite(item.title)}
+                    >
+                      <img
+                        className="heart"
+                        src={
+                          favorites.includes(item.title)
+                            ? './icons/ActiveHeart.svg'
+                            : './icons/heart.png'
+                        }
+                        alt="Favorite"
+                      />
+                    </button>
                   </div>
 
-                </div>
-                <div className="home-page__result-card-image" />
-                <div className="home-page__result-card-body">
-                  <div className="home-page__result-card-label">
-                    {item.category}
+                  <div className='home-page__result-card-all'>
+                    <div className="home-page__result-card-image" />
+                    <div className="home-page__result-card-body">
+                      <div className="home-page__result-card-label">
+                        {item.category}
+                      </div>
+                      <h3>{item.title}</h3>
+                      <div className="home-page__result-card-info">
+                        <span>{item.rating}</span>
+                        <span>({item.reviews})</span>
+                        <span>• {item.distance}</span>
+                      </div>
+
+                      <div className="home-page__result-card-services">
+                        {item.services.map(service => (
+                          <span key={service}>{service}</span>
+                        ))}
+                      </div>
+                      <div className="home-page__result-card-footer">
+                        <span>{item.price}</span>
+                        <button type="button" className='home-page__result-card-button'>Перейти до бронювання</button>
+                      </div>
+                    </div>
                   </div>
-                  <h3>{item.title}</h3>
-                  <div className="home-page__result-card-info">
-                    <span>{item.rating}</span>
-                    <span>({item.reviews})</span>
-                    <span>• {item.distance}</span>
-                  </div>
-                  
-                  <div className="home-page__result-card-services">
-                    {item.services.map(service => (
-                      <span key={service}>{service}</span>
-                    ))}
-                  </div>
-                  <div className="home-page__result-card-footer">
-                    <span>{item.price}</span>
-                    <button type="button">Перейти до бронювання</button>
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
-        </main>
+                </article>
+              ))}
+            </div>
+          </main>
+
+
+          <section>
+            <main className="home-page__ai_results">
+              <div className="home-page__ai_cards-grid">
+                {results.map(item => (
+                  <article key={item.title} className="home-page__ai_result-card">
+                    <div className="home-page__ai_result-card-top">
+                      <div className="home-page__result-card-badge">
+                        {item.badge}
+                      </div>
+                      <button
+                        className="heart-circle"
+                        onClick={() => toggleFavorite(item.title)}
+                      >
+                        <img
+                          className="heart"
+                          src={
+                            favorites.includes(item.title)
+                              ? './icons/ActiveHeart.svg'
+                              : './icons/heart.png'
+                          }
+                          alt="Favorite"
+                        />
+                      </button>
+                    </div>
+                    <div className="home-page__ai_result-card-image" />
+                    <div className="home-page__ai_result-card-body">
+                      <h3>{item.title}</h3>
+                      <div className="home-page__ai_result-card-info">
+                        <span>{item.rating}</span>
+                        <span>({item.reviews})</span>
+                        <span>• {item.distance}</span>
+                      </div>
+
+                      <div className="home-page__ai_result-card-services">
+                        {item.services.map(service => (
+                          <span key={service}>{service}</span>
+                        ))}
+                      </div>
+                      <div className="home-page__ai_result-card-footer">
+                        <span>{item.price}</span>
+                        <button type="button">Перейти до бронювання</button>
+                      </div>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </main>
+          </section>
+        </div>
+
 
         <aside className="home-page__map">
           <div className="home-page__map-card">
