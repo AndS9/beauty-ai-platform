@@ -184,3 +184,6 @@ GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID")
 SECURE_REFERRER_POLICY = "no-referrer-when-downgrade"
 
 GEOAPIFY_API_KEY = os.environ.get("GEOAPIFY_API_KEY")
+
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
