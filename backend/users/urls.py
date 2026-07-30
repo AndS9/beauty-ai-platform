@@ -11,6 +11,8 @@ from users.views import (
     VerifyEmailView,
     GoogleTestView,
     GoogleLoginView,
+    ChangePasswordView,
+    SetPasswordView,
 )
 
 app_name = "users"
@@ -28,4 +30,6 @@ urlpatterns = [
     ),
     path("google-login/", GoogleLoginView.as_view(), name="google-login"),
     path("google-test/", GoogleTestView.as_view(), name="google-test"),
+    path("me/change-password/", ChangePasswordView.as_view(), name="change_password"),
+    path("me/set-password/", SetPasswordView.as_view(), name="set_password"),
 ]

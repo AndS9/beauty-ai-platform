@@ -25,5 +25,51 @@ class UserSerializer(serializers.ModelSerializer):
         return user
 
 
+class UserProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = get_user_model()
+        fields = (
+            "id",
+            "first_name",
+            "last_name",
+            "phone",
+            "email",
+            "is_active",
+            "is_staff",
+            "birth_date",
+            "date_joined",
+        )
+        read_only_fields = ("id", "is_active", "is_staff", "date_joined")
+
+
+class ChangePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(write_only=True)
+    new_password = serializers.CharField(write_only=True)
+
+    def validate_old_password(self, value):
+        user = self.context["request"].user
+
+        if not user.check_password(value):
+            raise serializers.ValidationError("Incorrect password.")
+
+        return value
+
+    def save(self):
+        user = self.context["request"].user
+        user.set_password(self.validated_data["new_password"])
+        user.save()
+        return user
+
+
+class SetPasswordSerializer(serializers.Serializer):
+    new_password = serializers.CharField(write_only=True)
+
+    def save(self):
+        user = self.context["request"].user
+        user.set_password(self.validated_data["new_password"])
+        user.save()
+        return user
+
+
 class GoogleLoginSerializer(serializers.Serializer):
     id_token = serializers.CharField()

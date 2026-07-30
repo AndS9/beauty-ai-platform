@@ -6,10 +6,17 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.exceptions import ValidationError
 
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from users.serializers import UserSerializer, GoogleLoginSerializer
+from users.serializers import (
+    UserSerializer,
+    GoogleLoginSerializer,
+    UserProfileSerializer,
+    ChangePasswordSerializer,
+    SetPasswordSerializer,
+)
 from users.services.auth_service import UserAuthService
 
 
@@ -18,11 +25,50 @@ class CreateUserView(generics.CreateAPIView):
 
 
 class ManageUserView(generics.RetrieveUpdateAPIView):
-    serializer_class = UserSerializer
+    serializer_class = UserProfileSerializer
     permission_classes = (IsAuthenticated,)
 
     def get_object(self):
         return self.request.user
+
+
+class ChangePasswordView(generics.GenericAPIView):
+    serializer_class = ChangePasswordSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request, *args, **kwargs):
+        if not request.user.has_usable_password():
+            raise ValidationError(
+                {"detail": "Password has not been set. Use the set-password endpoint."}
+            )
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class SetPasswordView(generics.GenericAPIView):
+    serializer_class = SetPasswordSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request, *args, **kwargs):
+        if request.user.has_usable_password():
+            raise ValidationError(
+                {
+                    "detail": (
+                        "Password has already been set. "
+                        "Use the change-password endpoint."
+                    )
+                }
+            )
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class VerifyEmailView(APIView):
