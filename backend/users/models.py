@@ -54,6 +54,10 @@ class User(AbstractUser):
         blank=True,
     )
 
+    @property
+    def is_master(self):
+        return hasattr(self, "master")
+
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
 

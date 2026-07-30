@@ -38,8 +38,9 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "is_staff",
             "birth_date",
             "date_joined",
+            "is_master"
         )
-        read_only_fields = ("id", "is_active", "is_staff", "date_joined")
+        read_only_fields = ("id", "is_active", "is_staff", "date_joined", "is_master")
 
 
 class ChangePasswordSerializer(serializers.Serializer):
