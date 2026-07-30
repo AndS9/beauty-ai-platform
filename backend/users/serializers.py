@@ -1,7 +1,12 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
+from beauty_service.models import Service
+from users.models import Master
 from users.services.auth_service import UserRegistrationService
+from phonenumber_field.serializerfields import PhoneNumberField
+
+from salons.models import Salon
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -41,6 +46,76 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "is_master"
         )
         read_only_fields = ("id", "is_active", "is_staff", "date_joined", "is_master")
+
+
+class AssignedSalonsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Salon
+        fields = (
+            "id",
+            "name",
+        )
+
+
+class ServiceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Service
+        fields = (
+            "id",
+            "name",
+        )
+
+
+class MasterProfileSerializer(serializers.ModelSerializer):
+    first_name = serializers.CharField(source="user.first_name")
+    last_name = serializers.CharField(source="user.last_name")
+    email = serializers.EmailField(source="user.email")
+    phone = PhoneNumberField(source="user.phone")
+    assigned_salons = AssignedSalonsSerializer(
+        source="salons",
+        many=True,
+        read_only=True,
+    )
+    active_services = ServiceSerializer(
+        many=True,
+        read_only=True,
+    )
+
+    class Meta:
+        model = Master
+        fields = (
+            "id",
+            "first_name",
+            "last_name",
+            "email",
+            "phone",
+            "bio",
+            "years_of_experience",
+            "average_rating",
+            "total_reviews",
+            "assigned_salons",
+            "active_services",
+            "account_status",
+            "registration_date",
+            "last_update",
+        )
+        read_only_fields = (
+            "id",
+            "registration_date",
+            "last_update",
+            "average_rating",
+            "total_reviews",
+            "account_status",
+        )
+
+    def update(self, instance, validated_data):
+        user_data = validated_data.pop("user", {})
+
+        for attr, value in user_data.items():
+            setattr(instance.user, attr, value)
+        instance.user.save()
+
+        return super().update(instance, validated_data)
 
 
 class ChangePasswordSerializer(serializers.Serializer):

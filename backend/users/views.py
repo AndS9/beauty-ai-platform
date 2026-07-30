@@ -10,12 +10,13 @@ from rest_framework.exceptions import ValidationError
 
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from users.permissions import IsMaster
 from users.serializers import (
     UserSerializer,
     GoogleLoginSerializer,
     UserProfileSerializer,
     ChangePasswordSerializer,
-    SetPasswordSerializer,
+    SetPasswordSerializer, MasterProfileSerializer,
 )
 from users.services.auth_service import UserAuthService
 
@@ -30,6 +31,14 @@ class ManageUserView(generics.RetrieveUpdateAPIView):
 
     def get_object(self):
         return self.request.user
+
+
+class ManageMasterView(generics.RetrieveUpdateAPIView):
+    serializer_class = MasterProfileSerializer
+    permission_classes = (IsMaster,)
+
+    def get_object(self):
+        return self.request.user.master
 
 
 class ChangePasswordView(generics.GenericAPIView):
