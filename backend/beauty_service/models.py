@@ -21,6 +21,7 @@ class Service(models.Model):
     name = models.CharField(max_length=120)
     duration_minutes = models.PositiveSmallIntegerField()
     price = models.DecimalField(max_digits=8, decimal_places=2)
+    is_active = models.BooleanField(default=True)
 
     class Meta:
         db_table = "services"
