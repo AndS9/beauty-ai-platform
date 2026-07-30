@@ -110,7 +110,7 @@ Pipfile.lock
 
 # Generated media
 backend/media/*
-!media/.gitkeep
+!backend/media/.gitkeep
 
 # Static files (if generated)
 staticfiles/
