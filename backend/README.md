@@ -19,3 +19,4 @@ This command will:
 After the containers are running, the application will be available at:
 
 - **Django:** http://localhost:8000
+- **Swagger-ui:** http://localhost:8000/api/schema/swagger-ui/
