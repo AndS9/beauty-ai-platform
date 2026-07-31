@@ -34,8 +34,10 @@ class AbstractSalon(models.Model):
 class Salon(AbstractSalon):
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         related_name="salons",
+        null=True,
+        blank=True,
     )
     masters = models.ManyToManyField(
         "users.Master",
