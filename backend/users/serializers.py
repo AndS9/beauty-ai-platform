@@ -5,8 +5,9 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.forms.models import model_to_dict
 from rest_framework import serializers
 
+from appointments.models import Appointment
 from beauty_service.models import Service
-from users.models import Master, WorkingSchedule
+from users.models import Master, WorkingSchedule, DayOff
 from users.services.auth_service import UserRegistrationService
 from phonenumber_field.serializerfields import PhoneNumberField
 
@@ -139,6 +140,74 @@ class WorkingScheduleSerializer(serializers.ModelSerializer):
             ).exclude(pk=instance.pk).delete()
 
         return super().update(instance, validated_data)
+
+
+class DayOffSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DayOff
+        fields = (
+            "id",
+            "start_date",
+            "end_date",
+            "reason",
+            "created_at",
+            "updated_at",
+        )
+        read_only_fields = (
+            "id",
+            "created_at",
+            "updated_at",
+        )
+
+    def validate(self, attrs):
+        master = self.context["request"].user.master
+        instance = self.instance
+
+        start_date = attrs.get(
+            "start_date",
+            instance.start_date if instance else None,
+        )
+        end_date = attrs.get(
+            "end_date",
+            instance.end_date if instance else None,
+        )
+
+        if start_date is None or end_date is None:
+            raise serializers.ValidationError(
+                "Start date and end date are required."
+            )
+
+        if start_date > end_date:
+            raise serializers.ValidationError(
+                "Start date cannot be greater than end date."
+            )
+
+        overlapping = DayOff.objects.filter(
+            master=master,
+            start_date__lte=end_date,
+            end_date__gte=start_date,
+        )
+
+        if instance:
+            overlapping = overlapping.exclude(pk=instance.pk)
+
+        if overlapping.exists():
+            raise serializers.ValidationError(
+                "This period overlaps with another day off."
+            )
+
+        appointments = Appointment.objects.filter(
+            master=master,
+            appointment_date__range=(start_date, end_date),
+            status="confirmed",
+        )
+
+        if appointments.exists():
+            raise serializers.ValidationError(
+                "There are confirmed appointments within this period."
+            )
+
+        return attrs
 
 
 class MasterProfileSerializer(serializers.ModelSerializer):

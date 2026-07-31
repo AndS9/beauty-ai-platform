@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.views import View
 
-from rest_framework import generics, status
+from rest_framework import generics, status, viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -10,7 +10,7 @@ from rest_framework.exceptions import ValidationError
 
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from users.models import WorkingSchedule
+from users.models import WorkingSchedule, DayOff
 from users.permissions import IsMaster
 from users.serializers import (
     UserSerializer,
@@ -19,7 +19,7 @@ from users.serializers import (
     ChangePasswordSerializer,
     SetPasswordSerializer,
     MasterProfileSerializer,
-    WorkingScheduleSerializer,
+    WorkingScheduleSerializer, DayOffSerializer,
 )
 from users.services.auth_service import UserAuthService
 
@@ -55,6 +55,21 @@ class WorkingScheduleListCreateView(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         serializer.save(master=self.request.user.master)
+
+
+class DayOffViewSet(viewsets.ModelViewSet):
+    serializer_class = DayOffSerializer
+    permission_classes = (IsMaster,)
+
+    def get_queryset(self):
+        return DayOff.objects.filter(
+            master=self.request.user.master
+        ).order_by("start_date")
+
+    def perform_create(self, serializer):
+        serializer.save(
+            master=self.request.user.master
+        )
 
 
 class ManageWorkingScheduleView(generics.RetrieveUpdateDestroyAPIView):

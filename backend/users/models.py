@@ -241,6 +241,25 @@ class WorkingSchedule(models.Model):
         )
 
 
+class DayOff(models.Model):
+    master = models.ForeignKey(
+        Master,
+        on_delete=models.CASCADE,
+        related_name="days_off",
+    )
+    start_date = models.DateField()
+    end_date = models.DateField()
+    reason = models.CharField(
+        max_length=255,
+        blank=True,
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ("start_date",)
+
+
 class MasterSalon(models.Model):
     master = models.ForeignKey(
         Master,
