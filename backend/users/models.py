@@ -5,9 +5,10 @@ from django.db.models import Avg
 from django.utils.translation import gettext as _
 from django.core.exceptions import ValidationError
 
-from salons.models import Salon
 from .managers import UserManager
 from phonenumber_field.modelfields import PhoneNumberField
+
+from .services.media_path import generate_upload_path
 
 
 class GenderChoice(models.TextChoices):
@@ -17,11 +18,22 @@ class GenderChoice(models.TextChoices):
 
 class User(AbstractUser):
     username = None
+    first_name = models.CharField(
+        _("first name"),
+        max_length=150,
+    )
+    last_name = models.CharField(
+        _("last name"),
+        max_length=150,
+    )
     email = models.EmailField(_("email address"), unique=True)
     phone = PhoneNumberField(
-        blank=True,
-        null=True,
         unique=True,
+    )
+    photo = models.ImageField(
+        upload_to=generate_upload_path,
+        null=True,
+        blank=True,
     )
     google_id = models.CharField(
         max_length=255,
@@ -55,6 +67,12 @@ class User(AbstractUser):
         decimal_places=6,
         null=True,
         blank=True,
+    )
+    registration_date_user = models.DateTimeField(
+        auto_now_add=True,
+    )
+    last_update_user = models.DateTimeField(
+        auto_now=True,
     )
 
     @property
@@ -98,14 +116,11 @@ class Master(models.Model):
         null=True,
         blank=True,
     )
-    years_of_experience = models.PositiveIntegerField(
-        null=True,
-        blank=True,
-    )
-    registration_date = models.DateTimeField(
+    years_of_experience = models.PositiveIntegerField()
+    registration_date_master = models.DateTimeField(
         auto_now_add=True,
     )
-    last_update = models.DateTimeField(
+    last_update_master = models.DateTimeField(
         auto_now=True,
     )
     account_status = models.CharField(
@@ -141,14 +156,6 @@ class Master(models.Model):
         )
 
 
-class Shift(models.Model):
-    name = models.CharField(max_length=50, unique=True)
-    cycle_order = models.PositiveSmallIntegerField(unique=True)
-
-    class Meta:
-        ordering = ("cycle_order",)
-
-
 class WeekDay(models.IntegerChoices):
     MONDAY = 1, "Monday"
     TUESDAY = 2, "Tuesday"
@@ -177,11 +184,6 @@ class WorkingSchedule(models.Model):
         blank=True,
     )
     is_day_off = models.BooleanField(default=False)
-    shift = models.ForeignKey(
-        Shift,
-        on_delete=models.CASCADE,
-        related_name="working_schedule",
-    )
 
     def clean(self):
         super().clean()
@@ -201,6 +203,22 @@ class WorkingSchedule(models.Model):
                 "start_time must be before end_time."
             )
 
+        overlapping = WorkingSchedule.objects.filter(
+            master=self.master,
+            weekday=self.weekday,
+            is_day_off=False,
+            start_time__lt=self.end_time,
+            end_time__gt=self.start_time,
+        )
+
+        if self.pk:
+            overlapping = overlapping.exclude(pk=self.pk)
+
+        if overlapping.exists():
+            raise ValidationError(
+                "Working schedule overlaps with an existing schedule."
+            )
+
     class Meta:
         ordering = ("weekday", "start_time")
 
@@ -210,7 +228,6 @@ class WorkingSchedule(models.Model):
 
         return (
             f"{self.master} - "
-            f"{self.shift.name} - "
             f"{self.get_weekday_display()} "
             f"{self.start_time}-{self.end_time}"
         )
