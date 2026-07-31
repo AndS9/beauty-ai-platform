@@ -183,30 +183,38 @@ class WorkingSchedule(models.Model):
         null=True,
         blank=True,
     )
-    is_day_off = models.BooleanField(default=False)
+    is_working_day = models.BooleanField(default=True)
 
     def clean(self):
         super().clean()
 
-        if self.is_day_off:
-            self.start_time = None
-            self.end_time = None
+        if not self.is_working_day:
+            if self.start_time or self.end_time:
+                raise ValidationError({
+                    "non_field_errors": ["Day off cannot contain working hours."]
+                })
             return
 
-        if self.start_time is None or self.end_time is None:
-            raise ValidationError(
-                "start_time and end_time are required."
-            )
+        if self.start_time is None:
+            raise ValidationError({
+                "start_time": ["This field is required."],
+            })
+
+        if self.end_time is None:
+            raise ValidationError({
+                "end_time": ["This field is required."],
+            })
 
         if self.start_time >= self.end_time:
-            raise ValidationError(
-                "start_time must be before end_time."
-            )
+            raise ValidationError({
+                "start_time": ["Start time must be earlier than end time."],
+                "end_time": ["End time must be later than start time."],
+            })
 
         overlapping = WorkingSchedule.objects.filter(
             master=self.master,
             weekday=self.weekday,
-            is_day_off=False,
+            is_working_day=True,
             start_time__lt=self.end_time,
             end_time__gt=self.start_time,
         )
@@ -215,15 +223,15 @@ class WorkingSchedule(models.Model):
             overlapping = overlapping.exclude(pk=self.pk)
 
         if overlapping.exists():
-            raise ValidationError(
-                "Working schedule overlaps with an existing schedule."
-            )
+            raise ValidationError({
+                "non_field_errors": ["Working schedule overlaps with an existing schedule."],
+            })
 
     class Meta:
         ordering = ("weekday", "start_time")
 
     def __str__(self):
-        if self.is_day_off:
+        if not self.is_working_day:
             return f"{self.master} - {self.get_weekday_display()} (Day off)"
 
         return (
@@ -231,10 +239,6 @@ class WorkingSchedule(models.Model):
             f"{self.get_weekday_display()} "
             f"{self.start_time}-{self.end_time}"
         )
-
-    def save(self, *args, **kwargs):
-        self.full_clean()
-        super().save(*args, **kwargs)
 
 
 class MasterSalon(models.Model):

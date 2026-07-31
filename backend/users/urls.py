@@ -14,6 +14,8 @@ from users.views import (
     ChangePasswordView,
     SetPasswordView,
     ManageMasterView,
+    WorkingScheduleListCreateView,
+    ManageWorkingScheduleView,
 )
 
 app_name = "users"
@@ -34,4 +36,14 @@ urlpatterns = [
     path("me/change-password/", ChangePasswordView.as_view(), name="change_password"),
     path("me/set-password/", SetPasswordView.as_view(), name="set_password"),
     path("masters/me/", ManageMasterView.as_view(), name="master-profile"),
+    path(
+        "working-schedule/",
+        WorkingScheduleListCreateView.as_view(),
+        name="working-schedule-list-create",
+    ),
+    path(
+        "working-schedule/<int:pk>/",
+        ManageWorkingScheduleView.as_view(),
+        name="working-schedule-detail",
+    ),
 ]

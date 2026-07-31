@@ -1,4 +1,8 @@
+import copy
+
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError as DjangoValidationError
+from django.forms.models import model_to_dict
 from rest_framework import serializers
 
 from beauty_service.models import Service
@@ -91,9 +95,50 @@ class WorkingScheduleSerializer(serializers.ModelSerializer):
         model = WorkingSchedule
         fields = (
             "id",
+            "weekday",
             "start_time",
             "end_time",
+            "is_working_day",
         )
+        read_only_fields = (
+            "id",
+        )
+
+    def validate(self, attrs):
+        instance = self.instance or WorkingSchedule()
+
+        for attr, value in attrs.items():
+            setattr(instance, attr, value)
+
+        if instance.pk is None:
+            instance.master = self.context["request"].user.master
+
+        try:
+            instance.clean()
+        except DjangoValidationError as e:
+            if hasattr(e, "message_dict"):
+                raise serializers.ValidationError(e.message_dict)
+            raise serializers.ValidationError(e.messages)
+
+        return attrs
+
+    def create(self, validated_data):
+        if not validated_data["is_working_day"]:
+            WorkingSchedule.objects.filter(
+                master=validated_data["master"],
+                weekday=validated_data["weekday"],
+            ).delete()
+
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        if not validated_data.get("is_working_day", instance.is_working_day):
+            WorkingSchedule.objects.filter(
+                master=validated_data.get("master", instance.master),
+                weekday=validated_data.get("weekday", instance.weekday),
+            ).exclude(pk=instance.pk).delete()
+
+        return super().update(instance, validated_data)
 
 
 class MasterProfileSerializer(serializers.ModelSerializer):

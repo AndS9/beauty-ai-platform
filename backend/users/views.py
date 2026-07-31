@@ -10,13 +10,16 @@ from rest_framework.exceptions import ValidationError
 
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from users.models import WorkingSchedule
 from users.permissions import IsMaster
 from users.serializers import (
     UserSerializer,
     GoogleLoginSerializer,
     UserProfileSerializer,
     ChangePasswordSerializer,
-    SetPasswordSerializer, MasterProfileSerializer,
+    SetPasswordSerializer,
+    MasterProfileSerializer,
+    WorkingScheduleSerializer,
 )
 from users.services.auth_service import UserAuthService
 
@@ -39,6 +42,29 @@ class ManageMasterView(generics.RetrieveUpdateAPIView):
 
     def get_object(self):
         return self.request.user.master
+
+
+class WorkingScheduleListCreateView(generics.ListCreateAPIView):
+    serializer_class = WorkingScheduleSerializer
+    permission_classes = (IsMaster,)
+
+    def get_queryset(self):
+        return WorkingSchedule.objects.filter(
+            master=self.request.user.master
+        ).order_by("weekday", "start_time")
+
+    def perform_create(self, serializer):
+        serializer.save(master=self.request.user.master)
+
+
+class ManageWorkingScheduleView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = WorkingScheduleSerializer
+    permission_classes = (IsMaster,)
+
+    def get_queryset(self):
+        return WorkingSchedule.objects.filter(
+            master=self.request.user.master
+        )
 
 
 class ChangePasswordView(generics.GenericAPIView):
