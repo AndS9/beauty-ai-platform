@@ -2,62 +2,14 @@ import { useState } from 'react';
 import './HomePage.scss';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
+import { useEffect } from 'react';
 
 const categories = [
   { title: 'Манікюр', meta: 'від 500 грн' },
   { title: 'Перукар', meta: 'від 600 грн' },
   { title: 'Брови', meta: 'від 300 грн' },
-  { title: 'Макіяж', meta: 'від 700 грн' },
   { title: 'Косметологія', meta: 'від 900 грн' },
   { title: 'Масаж', meta: 'від 700 грн' },
-];
-
-const results = [
-  {
-    title: 'Beauty Studio',
-    category: 'Салон краси',
-    rating: '4.9',
-    reviews: 128,
-    distance: '1.2 км від вас',
-    price: 'від 700 грн',
-    services: [
-      'Манікюр від 700 грн',
-      'Стрижка від 600 грн',
-      'Мейкап від 900 грн',
-    ],
-    available: 'Доступний сьогодні',
-    badge: 'AI Рекомендація',
-  },
-  {
-    title: 'Анна Коваль',
-    category: 'Майстер манікюру',
-    rating: '5.0',
-    reviews: 96,
-    distance: '0.6 км від вас',
-    price: 'від 600 грн',
-    services: [
-      'Манікюр від 600 грн',
-      'Покриття від 500 грн',
-      'Дизайн від 100 грн',
-    ],
-    available: 'Доступний сьогодні о 18:00',
-    badge: 'AI Рекомендація',
-  },
-  {
-    title: 'Chop-Chop Barbershop',
-    category: 'Барбершоп',
-    rating: '4.8',
-    reviews: 74,
-    distance: '2.1 км від вас',
-    price: 'від 500 грн',
-    services: [
-      'Стрижка від 500 грн',
-      'Борода від 300 грн',
-      'Комплекс від 700 грн',
-    ],
-    available: 'Доступний сьогодні',
-    badge: 'AI Рекомендація',
-  },
 ];
 
 const result = [
@@ -106,10 +58,76 @@ const result = [
     available: 'Вільні місця',
     badge: 'Рекомендовано',
   },
+  {
+    title: 'Beauty Studio',
+    category: 'Салон краси',
+    rating: '4.9',
+    reviews: 128,
+    distance: '1.2 км від вас',
+    price: 'від 700 грн',
+    services: [
+      'Манікюр від 700 грн',
+      'Стрижка від 600 грн',
+      'Мейкап від 900 грн',
+    ],
+    available: 'Доступний сьогодні',
+    badge: 'AI Рекомендація',
+  },
+  {
+    title: 'Анна Коваль',
+    category: 'Майстер манікюру',
+    rating: '5.0',
+    reviews: 96,
+    distance: '0.6 км від вас',
+    price: 'від 600 грн',
+    services: [
+      'Манікюр від 600 грн',
+      'Покриття від 500 грн',
+      'Дизайн від 100 грн',
+    ],
+    available: 'Доступний сьогодні о 18:00',
+    badge: 'AI Рекомендація',
+  },
+  {
+    title: 'Chop-Chop Barbershop',
+    category: 'Барбершоп',
+    rating: '4.8',
+    reviews: 74,
+    distance: '2.1 км від вас',
+    price: 'від 500 грн',
+    services: [
+      'Стрижка від 500 грн',
+      'Борода від 300 грн',
+      'Комплекс від 700 грн',
+    ],
+    available: 'Доступний сьогодні',
+    badge: 'AI Рекомендація',
+  },
 ];
 
 export const HomePage = () => {
   const [price, setPrice] = useState(1200);
+  const [query, setQuery] = useState('');
+  const [filteredResults, setFilteredResults] = useState(result);
+  const [country, setCountry] = useState('Україна');
+  const [city, setCity] = useState('Київ');
+  const [selectedCategory, setSelectedCategory] = useState('Всі категорії');
+  const [selectedRating, setSelectedRating] = useState('Будь-який');
+  const [selectedDistance, setSelectedDistance] = useState('Будь-яка');
+  const [availableToday, setAvailableToday] = useState(false);
+  const [selectedDate, setSelectedDate] = useState('');
+  const [userLocation, setUserLocation] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
+
+  const [locationError, setLocationError] = useState('');
+
+  const getPriceNumber = (price: string) =>
+    Number(price.replace(/[^\d]/g, ''));
+
+  const getDistanceNumber = (distance: string) =>
+    Number(distance.replace(',', '.').match(/\d+(\.\d+)?/)?.[0] || 0);
 
 const [favorites, setFavorites] = useState<string[]>([]);
 
@@ -120,6 +138,108 @@ const toggleFavorite = (id: string) => {
       : [...prev, id]
   );
 };
+
+const handleSearch = () => {
+  const search = query.toLowerCase().trim();
+
+  const filtered = result.filter(item => {
+    const itemPrice = getPriceNumber(item.price);
+    const itemDistance = getDistanceNumber(item.distance);
+    const itemRating = Number(item.rating);
+
+    // Пошук
+    const matchesSearch =
+      !search ||
+      item.title.toLowerCase().includes(search) ||
+      item.category.toLowerCase().includes(search) ||
+      item.services.some(service =>
+        service.toLowerCase().includes(search)
+      );
+
+    // Категорія
+    const matchesCategory =
+      selectedCategory === 'Всі категорії' ||
+      item.category.toLowerCase().includes(
+        selectedCategory.toLowerCase()
+      ) ||
+      item.services.some(service =>
+        service.toLowerCase().includes(
+          selectedCategory.toLowerCase()
+        )
+      );
+
+    // Ціна
+    const matchesPrice = itemPrice <= price;
+
+    // Рейтинг
+    const matchesRating =
+      selectedRating === 'Будь-який' ||
+      itemRating >= Number(selectedRating.replace('+', ''));
+
+    // Відстань
+    const matchesDistance =
+      selectedDistance === 'Будь-яка' ||
+      itemDistance <= Number(selectedDistance.replace(/[^\d]/g, ''));
+
+    // Доступність
+    const matchesAvailability =
+      !availableToday ||
+      item.available.toLowerCase().includes('сьогодні');
+
+    return (
+      matchesSearch &&
+      matchesCategory &&
+      matchesPrice &&
+      matchesRating &&
+      matchesDistance &&
+      matchesAvailability
+    );
+  });
+
+  setFilteredResults(filtered);
+};
+
+useEffect(() => {
+    handleSearch();
+  }, [
+    query,
+    price,
+    selectedCategory,
+    selectedRating,
+    selectedDistance,
+    availableToday,
+  ]);
+
+  useEffect(() => {
+    if (!navigator.geolocation) {
+      setLocationError('Геолокація не підтримується браузером');
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      position => {
+        setUserLocation({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        });
+      },
+      error => {
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            setLocationError('Доступ до геолокації заборонено');
+            break;
+          case error.POSITION_UNAVAILABLE:
+            setLocationError('Місцезнаходження недоступне');
+            break;
+          case error.TIMEOUT:
+            setLocationError('Час очікування вичерпано');
+            break;
+          default:
+            setLocationError('Помилка визначення місцезнаходження');
+        }
+      }
+    );
+  }, []);
 
   return (
     <div className="home-page">
@@ -138,13 +258,71 @@ const toggleFavorite = (id: string) => {
               <span className="hero__search-icon">✨</span>
               <input
                 type="text"
-                placeholder="Наприклад: Манікюр до 800 грн біля мене сьогодні після 18:00"
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') {
+                    handleSearch();
+                  }
+                }}
+                placeholder="Пошук салонів, спеціалістів або послуг"
               />
             </label>
-            <button type="button" className="hero__search-location">
-              📍 Біля мене
-            </button>
-            <button type="button" className="hero__search-button">
+            <div className="hero__search-location-selector">
+              <select
+                value={country}
+                onChange={e => setCountry(e.target.value)}
+                className="hero__location-select"
+              >
+                <option value="Україна">Україна</option>
+                <option value="Польща">Польща</option>
+                <option value="Німеччина">Німеччина</option>
+                <option value="Чехія">Чехія</option>
+              </select>
+
+              <select
+                value={city}
+                onChange={e => setCity(e.target.value)}
+                className="hero__location-select"
+              >
+                {country === 'Україна' && (
+                  <>
+                    <option>Київ</option>
+                    <option>Львів</option>
+                    <option>Одеса</option>
+                    <option>Харків</option>
+                  </>
+                )}
+
+                {country === 'Польща' && (
+                  <>
+                    <option>Варшава</option>
+                    <option>Краків</option>
+                    <option>Гданськ</option>
+                  </>
+                )}
+
+                {country === 'Німеччина' && (
+                  <>
+                    <option>Берлін</option>
+                    <option>Мюнхен</option>
+                    <option>Гамбург</option>
+                  </>
+                )}
+
+                {country === 'Чехія' && (
+                  <>
+                    <option>Прага</option>
+                    <option>Брно</option>
+                  </>
+                )}
+              </select>
+            </div>
+            <button
+              type="button"
+              className="hero__search-button"
+              onClick={handleSearch}
+              >
               Знайти
             </button>
           </div>
@@ -167,15 +345,15 @@ const toggleFavorite = (id: string) => {
                   'Манікюр',
                   'Перукар',
                   'Барбери',
-                  'Макіяж',
                   'Косметологія',
                   'Масаж',
-                  'Брови та вії',
                 ].map(name => (
                   <label key={name} className="home-page__checkbox-item">
                     <input
-                      type="checkbox"
-                      defaultChecked={name === 'Всі категорії'}
+                      type="radio"
+                      name="category"
+                      checked={selectedCategory === name}
+                      onChange={() => setSelectedCategory(name)}
                     />
                     <span>{name}</span>
                   </label>
@@ -210,21 +388,25 @@ const toggleFavorite = (id: string) => {
                   <button
                     key={name}
                     type="button"
+                    onClick={() => setSelectedRating(name)}
                     className={
-                      name === 'Будь-який'
+                      selectedRating === name
                         ? 'home-page__chip home-page__chip--active'
                         : 'home-page__chip'
                     }
                   >
                     {name}
-                  </button>
+                </button>
                 ))}
               </div>
             </div>
 
             <div className="home-page__filter-group">
               <h3>Відстань</h3>
-              <select>
+              <select
+                value={selectedDistance}
+                onChange={e => setSelectedDistance(e.target.value)}
+                >
                 <option>Будь-яка</option>
                 <option>До 1 км</option>
                 <option>До 3 км</option>
@@ -235,9 +417,24 @@ const toggleFavorite = (id: string) => {
             <div className="home-page__filter-group">
               <h3>Доступність</h3>
               <label className="home-page__switch">
-                <input type="checkbox" defaultChecked />
+                <input
+                  type="checkbox"
+                  checked={availableToday}
+                  onChange={e => setAvailableToday(e.target.checked)}
+                />
                 <span>Доступний сьогодні</span>
               </label>
+            </div>
+            <div className="home-page__filter-group">
+              <h3>Дата бронювання</h3>
+
+              <input
+                type="date"
+                value={selectedDate}
+                min={new Date().toISOString().split('T')[0]}
+                onChange={e => setSelectedDate(e.target.value)}
+                className="home-page__date-picker"
+              />
             </div>
           </div>
 
@@ -265,7 +462,7 @@ const toggleFavorite = (id: string) => {
             <div className="home-page__results-header">
               <div>
                 <p className="home-page__results-count">
-                  Знайдено 128 результатів
+                  Знайдено {filteredResults.length} результатів
                 </p>
                 <p className="home-page__results-subtitle">
                   Сортування: Рекомендовані
@@ -285,7 +482,7 @@ const toggleFavorite = (id: string) => {
             </div>
 
             <div className="home-page__cards-grid">
-              {result.map(item => (
+              {filteredResults.map(item => (
                 <article key={item.title} className="home-page__result-card">
                   <div className="home-page__result-card-top">
                     <div className="home-page__result-card-badge">
@@ -327,7 +524,21 @@ const toggleFavorite = (id: string) => {
                       </div>
                       <div className="home-page__result-card-footer">
                         <span>{item.price}</span>
-                        <button type="button" className='home-page__result-card-button'>Перейти до бронювання</button>
+                        {selectedDate && (
+                          <div className="home-page__booking-date">
+                            Дата: {selectedDate}
+                          </div>
+                        )}
+                        <button
+                          type="button"
+                          className="home-page__result-card-button"
+                          onClick={() => {
+                            console.log('Майстер:', item.title);
+                            console.log('Дата:', selectedDate);
+                          }}
+                          >
+                          Перейти до бронювання
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -335,56 +546,6 @@ const toggleFavorite = (id: string) => {
               ))}
             </div>
           </main>
-
-
-          <section>
-            <main className="home-page__ai_results">
-              <div className="home-page__ai_cards-grid">
-                {results.map(item => (
-                  <article key={item.title} className="home-page__ai_result-card">
-                    <div className="home-page__ai_result-card-top">
-                      <div className="home-page__result-card-badge">
-                        {item.badge}
-                      </div>
-                      <button
-                        className="heart-circle"
-                        onClick={() => toggleFavorite(item.title)}
-                      >
-                        <img
-                          className="heart"
-                          src={
-                            favorites.includes(item.title)
-                              ? './icons/ActiveHeart.svg'
-                              : './icons/heart.png'
-                          }
-                          alt="Favorite"
-                        />
-                      </button>
-                    </div>
-                    <div className="home-page__ai_result-card-image" />
-                    <div className="home-page__ai_result-card-body">
-                      <h3>{item.title}</h3>
-                      <div className="home-page__ai_result-card-info">
-                        <span>{item.rating}</span>
-                        <span>({item.reviews})</span>
-                        <span>• {item.distance}</span>
-                      </div>
-
-                      <div className="home-page__ai_result-card-services">
-                        {item.services.map(service => (
-                          <span key={service}>{service}</span>
-                        ))}
-                      </div>
-                      <div className="home-page__ai_result-card-footer">
-                        <span>{item.price}</span>
-                        <button type="button">Перейти до бронювання</button>
-                      </div>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            </main>
-          </section>
         </div>
 
 
@@ -400,14 +561,22 @@ const toggleFavorite = (id: string) => {
 
             <div className="home-page__map-card-canvas">
               <MapContainer
-                center={[50.4501, 30.5234]}
+                center={
+                  userLocation
+                    ? [userLocation.lat, userLocation.lng]
+                    : [50.4501, 30.5234]
+                }
                 zoom={12}
-                style={{ height: '100%', width: '100%' }}
               >
                 <TileLayer
                   attribution='&copy; OpenStreetMap contributors'
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
+                {userLocation && (
+                  <Marker position={[userLocation.lat, userLocation.lng]}>
+                    <Popup>Ваше місцезнаходження</Popup>
+                  </Marker>
+                )}
 
                 <Marker position={[50.4501, 30.5234]}>
                   <Popup>Київ</Popup>
