@@ -1,8 +1,17 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import './HomePage.scss';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
-import { useEffect } from 'react';
+
+const MapRecenter = ({ center }: { center: [number, number] }) => {
+  const map = useMap();
+
+  useEffect(() => {
+    map.setView(center);
+  }, [center, map]);
+
+  return null;
+};
 
 const categories = [
   { title: 'Манікюр', meta: 'від 500 грн' },
@@ -109,8 +118,6 @@ export const HomePage = () => {
   const [price, setPrice] = useState(1200);
   const [query, setQuery] = useState('');
   const [filteredResults, setFilteredResults] = useState(result);
-  const [country, setCountry] = useState('Україна');
-  const [city, setCity] = useState('Київ');
   const [selectedCategory, setSelectedCategory] = useState('Всі категорії');
   const [selectedRating, setSelectedRating] = useState('Будь-який');
   const [selectedDistance, setSelectedDistance] = useState('Будь-яка');
@@ -121,85 +128,69 @@ export const HomePage = () => {
     lng: number;
   } | null>(null);
 
-  const [locationError, setLocationError] = useState('');
+  const [, setLocationError] = useState('');
 
-  const getPriceNumber = (price: string) =>
-    Number(price.replace(/[^\d]/g, ''));
+  const getPriceNumber = (price: string) => Number(price.replace(/[^\d]/g, ''));
 
   const getDistanceNumber = (distance: string) =>
     Number(distance.replace(',', '.').match(/\d+(\.\d+)?/)?.[0] || 0);
 
-const [favorites, setFavorites] = useState<string[]>([]);
+  const [favorites, setFavorites] = useState<string[]>([]);
 
-const toggleFavorite = (id: string) => {
-  setFavorites(prev =>
-    prev.includes(id)
-      ? prev.filter(item => item !== id)
-      : [...prev, id]
-  );
-};
-
-const handleSearch = () => {
-  const search = query.toLowerCase().trim();
-
-  const filtered = result.filter(item => {
-    const itemPrice = getPriceNumber(item.price);
-    const itemDistance = getDistanceNumber(item.distance);
-    const itemRating = Number(item.rating);
-
-    // Пошук
-    const matchesSearch =
-      !search ||
-      item.title.toLowerCase().includes(search) ||
-      item.category.toLowerCase().includes(search) ||
-      item.services.some(service =>
-        service.toLowerCase().includes(search)
-      );
-
-    // Категорія
-    const matchesCategory =
-      selectedCategory === 'Всі категорії' ||
-      item.category.toLowerCase().includes(
-        selectedCategory.toLowerCase()
-      ) ||
-      item.services.some(service =>
-        service.toLowerCase().includes(
-          selectedCategory.toLowerCase()
-        )
-      );
-
-    // Ціна
-    const matchesPrice = itemPrice <= price;
-
-    // Рейтинг
-    const matchesRating =
-      selectedRating === 'Будь-який' ||
-      itemRating >= Number(selectedRating.replace('+', ''));
-
-    // Відстань
-    const matchesDistance =
-      selectedDistance === 'Будь-яка' ||
-      itemDistance <= Number(selectedDistance.replace(/[^\d]/g, ''));
-
-    // Доступність
-    const matchesAvailability =
-      !availableToday ||
-      item.available.toLowerCase().includes('сьогодні');
-
-    return (
-      matchesSearch &&
-      matchesCategory &&
-      matchesPrice &&
-      matchesRating &&
-      matchesDistance &&
-      matchesAvailability
+  const toggleFavorite = (id: string) => {
+    setFavorites(prev =>
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id],
     );
-  });
+  };
 
-  setFilteredResults(filtered);
-};
+  const handleSearch = () => {
+    const search = query.toLowerCase().trim();
 
-useEffect(() => {
+    const filtered = result.filter(item => {
+      const itemPrice = getPriceNumber(item.price);
+      const itemDistance = getDistanceNumber(item.distance);
+      const itemRating = Number(item.rating);
+
+      const matchesSearch =
+        !search ||
+        item.title.toLowerCase().includes(search) ||
+        item.category.toLowerCase().includes(search) ||
+        item.services.some(service => service.toLowerCase().includes(search));
+
+      const matchesCategory =
+        selectedCategory === 'Всі категорії' ||
+        item.category.toLowerCase().includes(selectedCategory.toLowerCase()) ||
+        item.services.some(service =>
+          service.toLowerCase().includes(selectedCategory.toLowerCase()),
+        );
+
+      const matchesPrice = itemPrice <= price;
+
+      const matchesRating =
+        selectedRating === 'Будь-який' ||
+        itemRating >= Number(selectedRating.replace('+', ''));
+
+      const matchesDistance =
+        selectedDistance === 'Будь-яка' ||
+        itemDistance <= Number(selectedDistance.replace(/[^\d]/g, ''));
+
+      const matchesAvailability =
+        !availableToday || item.available.toLowerCase().includes('сьогодні');
+
+      return (
+        matchesSearch &&
+        matchesCategory &&
+        matchesPrice &&
+        matchesRating &&
+        matchesDistance &&
+        matchesAvailability
+      );
+    });
+
+    setFilteredResults(filtered);
+  };
+
+  useEffect(() => {
     handleSearch();
   }, [
     query,
@@ -237,7 +228,7 @@ useEffect(() => {
           default:
             setLocationError('Помилка визначення місцезнаходження');
         }
-      }
+      },
     );
   }, []);
 
@@ -250,7 +241,8 @@ useEffect(() => {
             Знайдіть ідеального майстра за допомогою <span>AI</span>
           </h1>
           <p className="hero__subtitle">
-            Опишіть, що вам потрібно, а ми знайдемо найкращі варіанти серед салонів та незалежних майстрів.
+            Опишіть, що вам потрібно, а ми знайдемо найкращі варіанти серед
+            салонів та незалежних майстрів.
           </p>
 
           <div className="hero__search">
@@ -269,60 +261,12 @@ useEffect(() => {
               />
             </label>
             <div className="hero__search-location-selector">
-              <select
-                value={country}
-                onChange={e => setCountry(e.target.value)}
-                className="hero__location-select"
-              >
-                <option value="Україна">Україна</option>
-                <option value="Польща">Польща</option>
-                <option value="Німеччина">Німеччина</option>
-                <option value="Чехія">Чехія</option>
-              </select>
-
-              <select
-                value={city}
-                onChange={e => setCity(e.target.value)}
-                className="hero__location-select"
-              >
-                {country === 'Україна' && (
-                  <>
-                    <option>Київ</option>
-                    <option>Львів</option>
-                    <option>Одеса</option>
-                    <option>Харків</option>
-                  </>
-                )}
-
-                {country === 'Польща' && (
-                  <>
-                    <option>Варшава</option>
-                    <option>Краків</option>
-                    <option>Гданськ</option>
-                  </>
-                )}
-
-                {country === 'Німеччина' && (
-                  <>
-                    <option>Берлін</option>
-                    <option>Мюнхен</option>
-                    <option>Гамбург</option>
-                  </>
-                )}
-
-                {country === 'Чехія' && (
-                  <>
-                    <option>Прага</option>
-                    <option>Брно</option>
-                  </>
-                )}
-              </select>
             </div>
             <button
               type="button"
               className="hero__search-button"
               onClick={handleSearch}
-              >
+            >
               Знайти
             </button>
           </div>
@@ -396,7 +340,7 @@ useEffect(() => {
                     }
                   >
                     {name}
-                </button>
+                  </button>
                 ))}
               </div>
             </div>
@@ -406,7 +350,7 @@ useEffect(() => {
               <select
                 value={selectedDistance}
                 onChange={e => setSelectedDistance(e.target.value)}
-                >
+              >
                 <option>Будь-яка</option>
                 <option>До 1 км</option>
                 <option>До 3 км</option>
@@ -456,7 +400,6 @@ useEffect(() => {
           </div>
         </aside>
 
-
         <div>
           <main className="home-page__results">
             <div className="home-page__results-header">
@@ -504,7 +447,7 @@ useEffect(() => {
                     </button>
                   </div>
 
-                  <div className='home-page__result-card-all'>
+                  <div className="home-page__result-card-all">
                     <div className="home-page__result-card-image" />
                     <div className="home-page__result-card-body">
                       <div className="home-page__result-card-label">
@@ -536,7 +479,7 @@ useEffect(() => {
                             console.log('Майстер:', item.title);
                             console.log('Дата:', selectedDate);
                           }}
-                          >
+                        >
                           Перейти до бронювання
                         </button>
                       </div>
@@ -547,7 +490,6 @@ useEffect(() => {
             </div>
           </main>
         </div>
-
 
         <aside className="home-page__map">
           <div className="home-page__map-card">
@@ -566,29 +508,45 @@ useEffect(() => {
                     ? [userLocation.lat, userLocation.lng]
                     : [50.4501, 30.5234]
                 }
-                zoom={12}
+                zoom={13}
               >
                 <TileLayer
-                  attribution='&copy; OpenStreetMap contributors'
+                  attribution="&copy; OpenStreetMap contributors"
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
                 {userLocation && (
+                  <MapRecenter center={[userLocation.lat, userLocation.lng]} />
+                )}
+                {userLocation && (
                   <Marker position={[userLocation.lat, userLocation.lng]}>
-                    <Popup>Ваше місцезнаходження</Popup>
+                    <Popup className="home-page__map-popup">
+                      Ваше місцезнаходження
+                    </Popup>
                   </Marker>
                 )}
-
-                <Marker position={[50.4501, 30.5234]}>
-                  <Popup>Київ</Popup>
-                </Marker>
-
-                <Marker position={[50.4547, 30.5238]}>
-                  <Popup>Локація 2</Popup>
-                </Marker>
-
-                <Marker position={[50.446, 30.515]}>
-                  <Popup>Локація 3</Popup>
-                </Marker>
+                {filteredResults.map(item => {
+                  const distance = getDistanceNumber(item.distance);
+                  if (userLocation && distance <= 5) {
+                    return (
+                      <Marker
+                        key={item.title}
+                        position={[
+                          userLocation.lat + Math.random() * 0.01 - 0.005,
+                          userLocation.lng + Math.random() * 0.01 - 0.005,
+                        ]}
+                      >
+                        <Popup>
+                          <strong>{item.title}</strong>
+                          <br />
+                          {item.category}
+                          <br />
+                          {item.distance}
+                        </Popup>
+                      </Marker>
+                    );
+                  }
+                  return null;
+                })}
               </MapContainer>
             </div>
           </div>
