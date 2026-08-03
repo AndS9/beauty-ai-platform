@@ -1,25 +1,23 @@
 from django.shortcuts import render
 from django.views import View
-
 from rest_framework import generics, status, viewsets
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.permissions import AllowAny
+from rest_framework.exceptions import ValidationError
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.exceptions import ValidationError
-
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from users.models import WorkingSchedule, DayOff
+from users.models import DayOff, WorkingSchedule
 from users.permissions import IsMaster
 from users.serializers import (
-    UserSerializer,
-    GoogleLoginSerializer,
-    UserProfileSerializer,
     ChangePasswordSerializer,
-    SetPasswordSerializer,
+    DayOffSerializer,
+    GoogleLoginSerializer,
     MasterProfileSerializer,
-    WorkingScheduleSerializer, DayOffSerializer,
+    SetPasswordSerializer,
+    UserProfileSerializer,
+    UserSerializer,
+    WorkingScheduleSerializer,
 )
 from users.services.auth_service import UserAuthService
 
@@ -49,9 +47,9 @@ class WorkingScheduleListCreateView(generics.ListCreateAPIView):
     permission_classes = (IsMaster,)
 
     def get_queryset(self):
-        return WorkingSchedule.objects.filter(
-            master=self.request.user.master
-        ).order_by("weekday", "start_time")
+        return WorkingSchedule.objects.filter(master=self.request.user.master).order_by(
+            "weekday", "start_time"
+        )
 
     def perform_create(self, serializer):
         serializer.save(master=self.request.user.master)
@@ -62,14 +60,12 @@ class DayOffViewSet(viewsets.ModelViewSet):
     permission_classes = (IsMaster,)
 
     def get_queryset(self):
-        return DayOff.objects.filter(
-            master=self.request.user.master
-        ).order_by("start_date")
+        return DayOff.objects.filter(master=self.request.user.master).order_by(
+            "start_date"
+        )
 
     def perform_create(self, serializer):
-        serializer.save(
-            master=self.request.user.master
-        )
+        serializer.save(master=self.request.user.master)
 
 
 class ManageWorkingScheduleView(generics.RetrieveUpdateDestroyAPIView):
@@ -77,9 +73,7 @@ class ManageWorkingScheduleView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = (IsMaster,)
 
     def get_queryset(self):
-        return WorkingSchedule.objects.filter(
-            master=self.request.user.master
-        )
+        return WorkingSchedule.objects.filter(master=self.request.user.master)
 
 
 class ChangePasswordView(generics.GenericAPIView):

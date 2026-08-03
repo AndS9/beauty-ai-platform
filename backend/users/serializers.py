@@ -1,17 +1,15 @@
-import copy
-
-from django.contrib.auth import get_user_model
-from django.core.exceptions import ValidationError as DjangoValidationError
-from django.forms.models import model_to_dict
-from rest_framework import serializers
+from typing import ClassVar
 
 from appointments.models import Appointment
 from beauty_service.models import Service
-from users.models import Master, WorkingSchedule, DayOff
-from users.services.auth_service import UserRegistrationService
+from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError as DjangoValidationError
 from phonenumber_field.serializerfields import PhoneNumberField
-
+from rest_framework import serializers
 from salons.models import Salon
+
+from users.models import DayOff, Master, WorkingSchedule
+from users.services.auth_service import UserRegistrationService
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -28,7 +26,9 @@ class UserSerializer(serializers.ModelSerializer):
             "phone",
         )
         read_only_fields = ("is_staff", "is_active")
-        extra_kwargs = {"password": {"write_only": True, "min_length": 5}}
+        extra_kwargs: ClassVar[dict] = {
+            "password": {"write_only": True, "min_length": 5}
+        }
 
     def create(self, validated_data):
         return UserRegistrationService.register(validated_data)
@@ -101,9 +101,7 @@ class WorkingScheduleSerializer(serializers.ModelSerializer):
             "end_time",
             "is_working_day",
         )
-        read_only_fields = (
-            "id",
-        )
+        read_only_fields = ("id",)
 
     def validate(self, attrs):
         instance = self.instance or WorkingSchedule()
@@ -173,9 +171,7 @@ class DayOffSerializer(serializers.ModelSerializer):
         )
 
         if start_date is None or end_date is None:
-            raise serializers.ValidationError(
-                "Start date and end date are required."
-            )
+            raise serializers.ValidationError("Start date and end date are required.")
 
         if start_date > end_date:
             raise serializers.ValidationError(

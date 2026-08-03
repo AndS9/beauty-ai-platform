@@ -1,13 +1,12 @@
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Avg
 from django.utils.translation import gettext as _
-from django.core.exceptions import ValidationError
-
-from .managers import UserManager
 from phonenumber_field.modelfields import PhoneNumberField
 
+from .managers import UserManager
 from .services.media_path import generate_upload_path
 
 
@@ -80,12 +79,16 @@ class User(AbstractUser):
         return hasattr(self, "master")
 
     USERNAME_FIELD = "email"
-    REQUIRED_FIELDS = []
+    REQUIRED_FIELDS = ()
 
     objects = UserManager()
 
     def __str__(self):
-        return f"{self.get_full_name()} ({self.email})" if self.get_full_name() else self.email
+        return (
+            f"{self.get_full_name()} ({self.email})"
+            if self.get_full_name()
+            else self.email
+        )
 
 
 class MasterStatus(models.TextChoices):
@@ -135,9 +138,7 @@ class Master(models.Model):
 
     @property
     def average_rating(self) -> float:
-        return self.reviews_received.aggregate(
-            average=Avg("rating")
-        )["average"]
+        return self.reviews_received.aggregate(average=Avg("rating"))["average"]
 
     @property
     def total_reviews(self) -> int:
@@ -149,11 +150,7 @@ class Master(models.Model):
 
     def __str__(self):
         name = self.user.get_full_name() or self.user.email
-        return (
-            f"{name} — {self.specialization}"
-            if self.specialization
-            else name
-        )
+        return f"{name} — {self.specialization}" if self.specialization else name
 
 
 class WeekDay(models.IntegerChoices):
@@ -190,26 +187,32 @@ class WorkingSchedule(models.Model):
 
         if not self.is_working_day:
             if self.start_time or self.end_time:
-                raise ValidationError({
-                    "non_field_errors": ["Day off cannot contain working hours."]
-                })
+                raise ValidationError(
+                    {"non_field_errors": ["Day off cannot contain working hours."]}
+                )
             return
 
         if self.start_time is None:
-            raise ValidationError({
-                "start_time": ["This field is required."],
-            })
+            raise ValidationError(
+                {
+                    "start_time": ["This field is required."],
+                }
+            )
 
         if self.end_time is None:
-            raise ValidationError({
-                "end_time": ["This field is required."],
-            })
+            raise ValidationError(
+                {
+                    "end_time": ["This field is required."],
+                }
+            )
 
         if self.start_time >= self.end_time:
-            raise ValidationError({
-                "start_time": ["Start time must be earlier than end time."],
-                "end_time": ["End time must be later than start time."],
-            })
+            raise ValidationError(
+                {
+                    "start_time": ["Start time must be earlier than end time."],
+                    "end_time": ["End time must be later than start time."],
+                }
+            )
 
         overlapping = WorkingSchedule.objects.filter(
             master=self.master,
@@ -223,9 +226,13 @@ class WorkingSchedule(models.Model):
             overlapping = overlapping.exclude(pk=self.pk)
 
         if overlapping.exists():
-            raise ValidationError({
-                "non_field_errors": ["Working schedule overlaps with an existing schedule."],
-            })
+            raise ValidationError(
+                {
+                    "non_field_errors": [
+                        "Working schedule overlaps with an existing schedule."
+                    ],
+                }
+            )
 
     class Meta:
         ordering = ("weekday", "start_time")
@@ -280,12 +287,12 @@ class MasterSalon(models.Model):
     )
 
     class Meta:
-        constraints = [
+        constraints = (
             models.UniqueConstraint(
                 fields=["master", "salon"],
                 name="unique_master_salon",
-            )
-        ]
+            ),
+        )
 
     def __str__(self):
         return f"{self.master} @ {self.salon}"
@@ -305,9 +312,9 @@ class MasterService(models.Model):
     )
 
     class Meta:
-        constraints = [
+        constraints = (
             models.UniqueConstraint(
                 fields=["master", "service"],
                 name="unique_master_service",
-            )
-        ]
+            ),
+        )
