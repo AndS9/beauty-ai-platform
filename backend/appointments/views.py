@@ -13,16 +13,21 @@ from rest_framework import (
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.exceptions import APIException
+from rest_framework import status as http_status
 
 from .models import Appointment
 from .serializers import (
     AppointmentSerializer,
     RescheduleSerializer,
-    CancelSerializer
+    CancelSerializer,
+    MasterStatusUpdateSerializer,
 )
 
 from beauty_service.models import Service
 from salons.models import Salon
+
+from tasks.notification import send_email_task
 
 
 class ClientAppointmentListView(generics.ListAPIView):
@@ -68,8 +73,7 @@ class RescheduleAppointmentView(generics.UpdateAPIView):
         appointment = self.get_object()
         if appointment.status in ["cancelled", "completed"]:
             raise serializers.ValidationError(
-                "Неможливо перенести бронювання зі статусом '%s'."
-                % appointment.status
+                "Неможливо перенести бронювання зі статусом '%s'." % appointment.status
             )
         serializer.save(status="pending")
 
@@ -160,15 +164,15 @@ class AvailableSlotsView(APIView):
 
         # preload the weekly schedule for this salon once, keyed by weekday number
         # noinspection PyUnresolvedReferences
-        working_hours_by_weekday = {
-            wh.weekday: wh for wh in salon.working_hours.all()
-        }
+        working_hours_by_weekday = {wh.weekday: wh for wh in salon.working_hours.all()}
 
         result = {}
         current_date = date_from
 
         while current_date <= date_to:
-            weekday = current_date.weekday()  # Monday=0 ... Sunday=6, matches our choices
+            weekday = (
+                current_date.weekday()
+            )  # Monday=0 ... Sunday=6, matches our choices
             schedule = working_hours_by_weekday.get(weekday)
 
             # if there is no schedule entry for this weekday, or the salon
@@ -181,7 +185,9 @@ class AvailableSlotsView(APIView):
 
             # already booked intervals for this master on this date (canceled ones are excluded)
             busy_appointments = (
-                Appointment.objects.filter(master_id=master_id, appointment_date=current_date)
+                Appointment.objects.filter(
+                    master_id=master_id, appointment_date=current_date
+                )
                 .exclude(status="cancelled")
                 .order_by("start_time")
             )
@@ -227,3 +233,70 @@ class AvailableSlotsView(APIView):
             current_date += timedelta(days=1)
 
         return Response(result)
+
+
+class StatusTransitionConflict(APIException):
+    status_code = http_status.HTTP_409_CONFLICT
+    default_detail = "Недопустимий перехід статусу."
+    default_code = "status_transition_conflict"
+
+
+class MasterUpdateAppointmentStatusView(generics.UpdateAPIView):
+    """
+    PATCH /api/appointments/<id>/status/
+
+    Allows a master to update the status of their booking.
+    Request body: {"status": "confirmed"}
+    For status "canceled", cancellation_reason is required.
+
+    Allowed transitions:
+    pending -> confirmed, canceled
+    confirmed -> completed, canceled
+    completed -> (nothing, status final)
+    canceled -> (nothing, status final)
+    """
+
+    ALLOWED_TRANSITIONS = {
+        "pending": ["confirmed", "cancelled"],
+        "confirmed": ["completed", "cancelled"],
+        "completed": [],
+        "cancelled": [],
+    }
+
+    serializer_class = MasterStatusUpdateSerializer
+    permission_classes = [IsAuthenticated]
+    http_method_names = ["patch"]
+
+    def get_queryset(self) -> QuerySet[Appointment]:
+        # master can update only appointments assigned to them
+        return Appointment.objects.filter(master__user=self.request.user)
+
+    def perform_update(self, serializer) -> None:
+        appointment = self.get_object()
+        new_status = serializer.validated_data.get("status")
+        current_status = appointment.status
+
+        allowed_next_statuses = self.ALLOWED_TRANSITIONS.get(current_status, [])
+
+        if new_status not in allowed_next_statuses:
+            raise StatusTransitionConflict(
+                "Неможливо перевести бронювання зі статусу '%s' у статус '%s'."
+                % (current_status, new_status)
+            )
+
+        serializer.save()
+
+        send_email_task.delay(
+            recipient=appointment.client.email,
+            subject="Оновлення статусу вашого запису",
+            context={
+                "customer_name": appointment.client.get_full_name() or appointment.client.email,
+                "booking_status": appointment.get_status_display(),
+                "salon_name": appointment.salon.name,
+                "master_name": appointment.master.user.get_full_name() or appointment.master.user.email,
+                "service_name": appointment.service.name,
+                "booking_date": appointment.appointment_date.isoformat(),
+                "booking_time": appointment.start_time.strftime("%H:%M"),
+                "notification_message": "Статус вашого запису оновлено на '%s'." % appointment.get_status_display(),
+            },
+        )
