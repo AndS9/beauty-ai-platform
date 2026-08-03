@@ -7,8 +7,7 @@ from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from google.auth.transport.requests import Request as GoogleRequest
 from google.oauth2 import id_token as google_id_token
 from rest_framework.exceptions import AuthenticationFailed, ValidationError
-
-from backend.services.email_service import EmailService
+from services.email_service import EmailService
 
 User = get_user_model()
 

@@ -1,5 +1,6 @@
-from django_filters.rest_framework import DjangoFilterBackend, OrderingFilter
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, permissions, serializers
+from rest_framework.filters import OrderingFilter
 from users.permissions import IsMaster
 
 from reviews.filters import MasterReviewFilter
