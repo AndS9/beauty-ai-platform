@@ -14,31 +14,44 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+
 from django.conf import settings
-from django.contrib import admin
-from django.urls import (
-    path,
-    include
-)
 from django.conf.urls.static import static
+from django.contrib import admin
+from django.urls import include, path
 from drf_spectacular.views import (
     SpectacularAPIView,
+    SpectacularRedocView,
     SpectacularSwaggerView,
-    SpectacularRedocView
 )
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/users/", include("users.urls", namespace="users")),
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
-    path("api/schema/swagger-ui/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
-    path("api/schema/redoc/", SpectacularRedocView.as_view(url_name="schema"), name="redoc"),
+    path(
+        "api/schema/swagger-ui/",
+        SpectacularSwaggerView.as_view(url_name="schema"),
+        name="swagger-ui",
+    ),
+    path(
+        "api/schema/redoc/",
+        SpectacularRedocView.as_view(url_name="schema"),
+        name="redoc",
+    ),
     path("api/appointments/", include("appointments.urls")),
     path("api/salons/", include("salons.urls")),
     path("api/reviews/", include("reviews.urls")),
     path("api/promotions/", include("promotions.urls", namespace="promotions")),
     path("api/payments/", include("payments.urls", namespace="payments")),
-    path("api/referral-events/", include("referral_events.urls", namespace="referral_events")),
+    path(
+        "api/referral-events/",
+        include("referral_events.urls", namespace="referral_events"),
+    ),
+    path(
+        "api/dashboard-statistics/",
+        include("dashboard_statistics.urls", namespace="dashboard_statistics"),
+    ),
 ]
 
 if settings.DEBUG:
