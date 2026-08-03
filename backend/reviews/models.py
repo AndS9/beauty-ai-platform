@@ -27,12 +27,12 @@ class Review(models.Model):
 
     class Meta:
         db_table = "reviews"
-        constraints = [
+        constraints = (
             models.CheckConstraint(
                 condition=models.Q(rating__gte=1) & models.Q(rating__lte=5),
                 name="reviews_rating_check",
             ),
-        ]
+        )
 
     def __str__(self) -> str:
         return f"Review #{self.id} — {self.rating}/5 for {self.master}"

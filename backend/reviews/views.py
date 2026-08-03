@@ -1,10 +1,16 @@
+from django_filters.rest_framework import DjangoFilterBackend, OrderingFilter
 from rest_framework import generics, permissions, serializers
+from users.permissions import IsMaster
+
+from reviews.filters import MasterReviewFilter
 
 from .models import Review
-from .serializers import ReviewSerializer
+from .serializers import MasterReviewSerializer, ReviewSerializer
 
 
-class ReviewListCreateView(generics.ListCreateAPIView):
+class ReviewListCreateView(
+    generics.ListCreateAPIView
+):  # Перевірити, чи дісно потрібна ця view
     """
     GET /api/reviews/ — list of all reviews, available to anyone (even without authorization)
     POST /api/reviews/ — leave a review for your completed booking, authorization required
@@ -37,7 +43,9 @@ class ReviewListCreateView(generics.ListCreateAPIView):
         serializer.save(client=self.request.user, master=appointment.master)
 
 
-class ReviewDetailView(generics.RetrieveAPIView):
+class ReviewDetailView(
+    generics.RetrieveAPIView
+):  # Перевірити, чи дісно потрібна ця view
     """
     GET /api/reviews/<id>/ — details of one review, available to anyone.
     Editing and deleting reviews is not yet provided.
@@ -46,3 +54,35 @@ class ReviewDetailView(generics.RetrieveAPIView):
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
     permission_classes = [permissions.AllowAny]
+
+
+class MasterReviewQuerysetMixin:
+    def get_queryset(self):
+        return Review.objects.filter(
+            appointment__master=self.request.user.master,
+            appointment__status="completed",
+        ).select_related(
+            "appointment",
+            "appointment__client",
+            "appointment__service",
+        )
+
+
+class MasterReviewListView(MasterReviewQuerysetMixin, generics.ListAPIView):
+    serializer_class = MasterReviewSerializer
+    permission_classes = (IsMaster,)
+    filter_backends = (
+        DjangoFilterBackend,
+        OrderingFilter,
+    )
+    filterset_class = MasterReviewFilter
+    ordering_fields = (
+        "created_at",
+        "rating",
+    )
+    ordering = ("-created_at",)
+
+
+class MasterReviewDetailView(MasterReviewQuerysetMixin, generics.RetrieveAPIView):
+    serializer_class = MasterReviewSerializer
+    permission_classes = (IsMaster,)
