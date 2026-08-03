@@ -1,9 +1,13 @@
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
+from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import Avg
 from django.utils.translation import gettext as _
-from .managers import UserManager
 from phonenumber_field.modelfields import PhoneNumberField
+
+from .managers import UserManager
+from .services.media_path import generate_upload_path
 
 
 class GenderChoice(models.TextChoices):
@@ -13,11 +17,22 @@ class GenderChoice(models.TextChoices):
 
 class User(AbstractUser):
     username = None
+    first_name = models.CharField(
+        _("first name"),
+        max_length=150,
+    )
+    last_name = models.CharField(
+        _("last name"),
+        max_length=150,
+    )
     email = models.EmailField(_("email address"), unique=True)
     phone = PhoneNumberField(
-        blank=True,
-        null=True,
         unique=True,
+    )
+    photo = models.ImageField(
+        upload_to=generate_upload_path,
+        null=True,
+        blank=True,
     )
     google_id = models.CharField(
         max_length=255,
@@ -46,21 +61,42 @@ class User(AbstractUser):
         null=True,
         blank=True,
     )
-
     last_longitude = models.DecimalField(
         max_digits=9,
         decimal_places=6,
         null=True,
         blank=True,
     )
+    registration_date_user = models.DateTimeField(
+        auto_now_add=True,
+    )
+    last_update_user = models.DateTimeField(
+        auto_now=True,
+    )
+
+    @property
+    def is_master(self):
+        return hasattr(self, "master")
 
     USERNAME_FIELD = "email"
-    REQUIRED_FIELDS = []
+    REQUIRED_FIELDS = ()
 
     objects = UserManager()
 
     def __str__(self):
-        return f"{self.get_full_name()} ({self.email})" if self.get_full_name() else self.email
+        return (
+            f"{self.get_full_name()} ({self.email})"
+            if self.get_full_name()
+            else self.email
+        )
+
+
+class MasterStatus(models.TextChoices):
+    ACTIVE = "active", "Active"
+    INACTIVE = "inactive", "Inactive"
+    BLOCKED = "blocked", "Blocked"
+    DELETED = "deleted", "Deleted"
+    PENDING = "pending", "Pending"
 
 
 class Master(models.Model):
@@ -79,17 +115,156 @@ class Master(models.Model):
         through="MasterService",
         related_name="masters",
     )
-    is_active = models.BooleanField(
-        default=True,
+    bio = models.TextField(
+        null=True,
+        blank=True,
     )
+    years_of_experience = models.PositiveIntegerField()
+    registration_date_master = models.DateTimeField(
+        auto_now_add=True,
+    )
+    last_update_master = models.DateTimeField(
+        auto_now=True,
+    )
+    account_status = models.CharField(
+        max_length=20,
+        choices=MasterStatus.choices,
+        default=MasterStatus.PENDING,
+    )
+
+    @property
+    def active_services(self):
+        return self.services.filter(is_active=True)
+
+    @property
+    def average_rating(self) -> float:
+        return self.reviews_received.aggregate(average=Avg("rating"))["average"]
+
+    @property
+    def total_reviews(self) -> int:
+        return self.reviews_received.count()
+
+    @property
+    def is_independent(self):
+        return not self.salons.exists()
 
     def __str__(self):
         name = self.user.get_full_name() or self.user.email
-        return (
-            f"{name} — {self.specialization}"
-            if self.specialization
-            else name
+        return f"{name} — {self.specialization}" if self.specialization else name
+
+
+class WeekDay(models.IntegerChoices):
+    MONDAY = 1, "Monday"
+    TUESDAY = 2, "Tuesday"
+    WEDNESDAY = 3, "Wednesday"
+    THURSDAY = 4, "Thursday"
+    FRIDAY = 5, "Friday"
+    SATURDAY = 6, "Saturday"
+    SUNDAY = 7, "Sunday"
+
+
+class WorkingSchedule(models.Model):
+    master = models.ForeignKey(
+        "Master",
+        on_delete=models.CASCADE,
+        related_name="working_schedule",
+    )
+    weekday = models.PositiveSmallIntegerField(
+        choices=WeekDay.choices,
+    )
+    start_time = models.TimeField(
+        null=True,
+        blank=True,
+    )
+    end_time = models.TimeField(
+        null=True,
+        blank=True,
+    )
+    is_working_day = models.BooleanField(default=True)
+
+    def clean(self):
+        super().clean()
+
+        if not self.is_working_day:
+            if self.start_time or self.end_time:
+                raise ValidationError(
+                    {"non_field_errors": ["Day off cannot contain working hours."]}
+                )
+            return
+
+        if self.start_time is None:
+            raise ValidationError(
+                {
+                    "start_time": ["This field is required."],
+                }
+            )
+
+        if self.end_time is None:
+            raise ValidationError(
+                {
+                    "end_time": ["This field is required."],
+                }
+            )
+
+        if self.start_time >= self.end_time:
+            raise ValidationError(
+                {
+                    "start_time": ["Start time must be earlier than end time."],
+                    "end_time": ["End time must be later than start time."],
+                }
+            )
+
+        overlapping = WorkingSchedule.objects.filter(
+            master=self.master,
+            weekday=self.weekday,
+            is_working_day=True,
+            start_time__lt=self.end_time,
+            end_time__gt=self.start_time,
         )
+
+        if self.pk:
+            overlapping = overlapping.exclude(pk=self.pk)
+
+        if overlapping.exists():
+            raise ValidationError(
+                {
+                    "non_field_errors": [
+                        "Working schedule overlaps with an existing schedule."
+                    ],
+                }
+            )
+
+    class Meta:
+        ordering = ("weekday", "start_time")
+
+    def __str__(self):
+        if not self.is_working_day:
+            return f"{self.master} - {self.get_weekday_display()} (Day off)"
+
+        return (
+            f"{self.master} - "
+            f"{self.get_weekday_display()} "
+            f"{self.start_time}-{self.end_time}"
+        )
+
+
+class DayOff(models.Model):
+    master = models.ForeignKey(
+        Master,
+        on_delete=models.CASCADE,
+        related_name="days_off",
+    )
+    start_date = models.DateField()
+    end_date = models.DateField()
+    reason = models.CharField(
+        max_length=255,
+        blank=True,
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ("start_date",)
 
 
 class MasterSalon(models.Model):
@@ -112,12 +287,12 @@ class MasterSalon(models.Model):
     )
 
     class Meta:
-        constraints = [
+        constraints = (
             models.UniqueConstraint(
                 fields=["master", "salon"],
                 name="unique_master_salon",
-            )
-        ]
+            ),
+        )
 
     def __str__(self):
         return f"{self.master} @ {self.salon}"
@@ -137,9 +312,9 @@ class MasterService(models.Model):
     )
 
     class Meta:
-        constraints = [
+        constraints = (
             models.UniqueConstraint(
                 fields=["master", "service"],
                 name="unique_master_service",
-            )
-        ]
+            ),
+        )

@@ -1,25 +1,18 @@
-from tasks.notification import send_email_task
-
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
 from django.db import IntegrityError
-
-from django.utils.encoding import force_str
-from django.utils.http import urlsafe_base64_decode
-from django.utils.encoding import force_bytes
-from django.utils.http import urlsafe_base64_encode
-
-from rest_framework.exceptions import ValidationError, AuthenticationFailed
-
+from django.utils.encoding import force_bytes, force_str
+from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from google.auth.transport.requests import Request as GoogleRequest
 from google.oauth2 import id_token as google_id_token
+from rest_framework.exceptions import AuthenticationFailed, ValidationError
+from services.email_service import EmailService
 
 User = get_user_model()
 
 
 class UserRegistrationService:
-
     @staticmethod
     def register(validated_data):
         user = User.objects.create_user(
@@ -32,7 +25,7 @@ class UserRegistrationService:
             f"{settings.BACKEND_URL}/api/users/verify-email/{uid}/{token}/"
         )
 
-        send_email_task.delay(
+        EmailService.send_email(
             recipient=user.email,
             subject="Verify your email",
             context={
@@ -45,17 +38,16 @@ class UserRegistrationService:
 
 
 class UserAuthService:
-
     @staticmethod
     def verify_email(uidb64: str, token: str) -> None:
         try:
             user_id = force_str(urlsafe_base64_decode(uidb64))
             user = User.objects.get(pk=user_id)
         except (
-                TypeError,
-                ValueError,
-                OverflowError,
-                User.DoesNotExist,
+            TypeError,
+            ValueError,
+            OverflowError,
+            User.DoesNotExist,
         ):
             raise ValidationError("Invalid verification link.")
 
