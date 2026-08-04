@@ -8,14 +8,15 @@ from .views import (
     MasterUpdateAppointmentStatusView,
     MasterAppointmentListView,
     MasterAppointmentDetailView,
+    MasterAppointmentHistoryView,
 )
 
 urlpatterns = [
-    path("my/", ClientAppointmentListView.as_view(), name="client-appointments-list"),
     path(
-        "<int:pk>/reschedule/",
-        RescheduleAppointmentView.as_view(),
-        name="appointment-reschedule",
+        "my/", ClientAppointmentListView.as_view(), name="client-appointments-list"
+    ),
+    path(
+        "<int:pk>/reschedule/", RescheduleAppointmentView.as_view(), name="appointment-reschedule"
     ),
     path(
         "<int:pk>/cancel/", CancelAppointmentView.as_view(), name="appointment-cancel"
@@ -28,6 +29,9 @@ urlpatterns = [
     ),
     path(
         "master/active/", MasterAppointmentListView.as_view(), name="master-appointments-active"
+    ),
+    path(
+        "master/history/", MasterAppointmentHistoryView.as_view(), name="master-appointments-history"
     ),
     path(
         "master/<int:pk>/", MasterAppointmentDetailView.as_view(), name="master-appointment-detail"
