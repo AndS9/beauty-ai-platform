@@ -39,7 +39,7 @@ class MasterStatusUpdateSerializer(serializers.ModelSerializer):
         model = Appointment
         fields = ["status", "cancellation_reason"]
 
-    def validate(self, attrs):
+    def validate(self, attrs) -> dict:
         status = attrs.get("status")
         cancellation_reason = attrs.get("cancellation_reason")
 
@@ -73,5 +73,49 @@ class MasterAppointmentListSerializer(serializers.ModelSerializer):
             "created_at",
         ]
 
+    # noinspection PyMethodMayBeStatic
+    def get_client_name(self, obj) -> str:
+        return obj.client.get_full_name() or obj.client.email
+
+
+class MasterAppointmentDetailSerializer(serializers.ModelSerializer):
+    client_id = serializers.IntegerField(source="client.id", read_only=True)
+    client_name = serializers.SerializerMethodField()
+    client_phone = serializers.CharField(source="client.phone", read_only=True)
+    client_email = serializers.EmailField(source="client.email", read_only=True)
+
+    service_id = serializers.IntegerField(source="service.id", read_only=True)
+    service_name = serializers.CharField(source="service.name", read_only=True)
+    service_duration = serializers.IntegerField(source="service.duration_minutes", read_only=True)
+    service_price = serializers.DecimalField(source="service.price", max_digits=8, decimal_places=2, read_only=True)
+
+    salon_id = serializers.IntegerField(source="salon.id", read_only=True)
+    salon_name = serializers.CharField(source="salon.name", read_only=True)
+    salon_address = serializers.CharField(source="salon.address", read_only=True)
+
+    class Meta:
+        model = Appointment
+        fields = [
+            "id",
+            "appointment_date",
+            "start_time",
+            "status",
+            "client_id",
+            "client_name",
+            "client_phone",
+            "client_email",
+            "service_id",
+            "service_name",
+            "service_duration",
+            "service_price",
+            "salon_id",
+            "salon_name",
+            "salon_address",
+            "notes",
+            "created_at",
+            "updated_at",
+        ]
+
+    # noinspection PyMethodMayBeStatic
     def get_client_name(self, obj) -> str:
         return obj.client.get_full_name() or obj.client.email

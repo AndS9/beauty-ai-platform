@@ -25,6 +25,7 @@ from .serializers import (
     CancelSerializer,
     MasterStatusUpdateSerializer,
     MasterAppointmentListSerializer,
+    MasterAppointmentDetailSerializer,
 )
 from .filters import MasterAppointmentFilter
 
@@ -354,3 +355,21 @@ class MasterAppointmentListView(generics.ListAPIView):
                 )
 
         return super().filter_queryset(queryset)
+
+
+class MasterAppointmentDetailView(generics.RetrieveAPIView):
+    """
+    GET /api/appointments/master/<id>/
+
+    Returns detailed information about a specific appointment assigned to
+    the currently authenticated master (client details, service details,
+    salon details, notes, timestamps).
+    """
+
+    serializer_class = MasterAppointmentDetailSerializer
+    permission_classes = [IsMaster]
+
+    def get_queryset(self) -> QuerySet[Appointment]:
+        return Appointment.objects.filter(master__user=self.request.user).select_related(
+            "client", "service", "salon"
+        )

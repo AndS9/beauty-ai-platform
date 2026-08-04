@@ -1,12 +1,20 @@
+from django.db.models import QuerySet
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import generics, permissions, serializers
+from rest_framework import (
+    generics,
+    permissions,
+    serializers
+)
 from rest_framework.filters import OrderingFilter
 from users.permissions import IsMaster
 
 from reviews.filters import MasterReviewFilter
 
 from .models import Review
-from .serializers import MasterReviewSerializer, ReviewSerializer
+from .serializers import (
+    MasterReviewSerializer,
+    ReviewSerializer
+)
 
 
 class ReviewListCreateView(
@@ -58,7 +66,7 @@ class ReviewDetailView(
 
 
 class MasterReviewQuerysetMixin:
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[Review]:
         return Review.objects.filter(
             appointment__master=self.request.user.master,
             appointment__status="completed",
