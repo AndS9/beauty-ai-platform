@@ -19,7 +19,7 @@ from .serializers import (
 
 class ReviewListCreateView(
     generics.ListCreateAPIView
-):  # Перевірити, чи дісно потрібна ця view
+):
     """
     GET /api/reviews/ — list of all reviews, available to anyone (even without authorization)
     POST /api/reviews/ — leave a review for your completed booking, authorization required
@@ -54,7 +54,7 @@ class ReviewListCreateView(
 
 class ReviewDetailView(
     generics.RetrieveAPIView
-):  # Перевірити, чи дісно потрібна ця view
+):
     """
     GET /api/reviews/<id>/ — details of one review, available to anyone.
     Editing and deleting reviews is not yet provided.
