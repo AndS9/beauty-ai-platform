@@ -1,5 +1,8 @@
+from datetime import datetime
+
 from django.conf import settings
 from django.db import models
+from django.utils import timezone
 
 
 class Appointment(models.Model):
@@ -38,8 +41,14 @@ class Appointment(models.Model):
     appointment_date = models.DateField()
     start_time = models.TimeField()
     end_time = models.TimeField()
-    # start = models.DateTimeField()
-    # end = models.DateTimeField()
+    start = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+    end = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
     cancellation_reason = models.CharField(max_length=255, null=True, blank=True)
     notes = models.TextField(null=True, blank=True)
@@ -71,7 +80,15 @@ class Appointment(models.Model):
     def __str__(self) -> str:
         return f"Appointment #{self.id} — {self.appointment_date} {self.start_time}"
 
+    def save(self, *args, **kwargs):  # костиль
+        self.start = timezone.make_aware(
+            datetime.combine(self.appointment_date, self.start_time)
+        )
+        self.end = timezone.make_aware(
+            datetime.combine(self.appointment_date, self.end_time)
+        )
 
+        super().save(*args, **kwargs)
 
 
 class AppointmentReminder(models.Model):

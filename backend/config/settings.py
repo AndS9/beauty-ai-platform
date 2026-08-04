@@ -10,10 +10,12 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
-from pathlib import Path
-from dotenv import load_dotenv
-from datetime import timedelta
 import os
+from datetime import timedelta
+from pathlib import Path
+
+from celery.schedules import crontab
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -133,7 +135,7 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 AUTH_USER_MODEL = "users.User"
 
@@ -150,8 +152,12 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(hours=float(os.environ.get("ACCESS_TOKEN_LIFETIME_IN_HOURS", 1))),
-    "REFRESH_TOKEN_LIFETIME": timedelta(hours=float(os.environ.get("REFRESH_TOKEN_LIFETIME_IN_HOURS", 3600))),
+    "ACCESS_TOKEN_LIFETIME": timedelta(
+        hours=float(os.environ.get("ACCESS_TOKEN_LIFETIME_IN_HOURS", 1))
+    ),
+    "REFRESH_TOKEN_LIFETIME": timedelta(
+        hours=float(os.environ.get("REFRESH_TOKEN_LIFETIME_IN_HOURS", 3600))
+    ),
     "ROTATE_REFRESH_TOKENS": False,
 }
 
@@ -167,14 +173,19 @@ CELERY_RESULT_BACKEND = os.environ.get("CELERY_RESULT_BACKEND")
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
-CELERY_TIMEZONE = os.environ.get("CELERY_TIMEZONE")
+CELERY_TIMEZONE = os.environ.get("CELERY_TIMEZONE", "UTC")
+CELERY_ENABLE_UTC = True
 
-# CELERY_BEAT_SCHEDULE = {
-#     "say-hello-every-10-seconds": {
-#         "task": "tasks.test_task.hello",
-#         "schedule": timedelta(seconds=20),
-#     },
-# }
+CELERY_BEAT_SCHEDULE = {
+    "appointment-24h-reminder": {
+        "task": "tasks.notification.send_24h_reminders",
+        "schedule": crontab(minute="*/1"),
+    },
+    "appointment-1h-reminder": {
+        "task": "tasks.notification.send_1h_reminders",
+        "schedule": crontab(minute="*/1"),
+    },
+}
 
 FRONTEND_URL = os.environ.get("FRONTEND_URL")
 BACKEND_URL = os.environ.get("BACKEND_URL")

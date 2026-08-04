@@ -1,26 +1,31 @@
-from tasks.notification import send_email_task
+from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
 
 
 class EmailService:
     @staticmethod
     def send_email(
-            recipient: str,
-            subject: str,
-            context: dict,
-            template_name: str = "emails/notification.html",
-            body: str | None = None,
+        recipient: str,
+        subject: str,
+        context: dict,
+        template_name: str = "emails/notification.html",
+        body: str | None = None,
     ) -> None:
-        send_email_task.delay(
-            recipient=recipient,
+        html = render_to_string(template_name, context)
+
+        message = EmailMultiAlternatives(
             subject=subject,
-            context=context,
-            template_name=template_name,
-            body=body,
+            body=body or "Your email client does not support HTML emails.",
+            to=[recipient],
         )
 
+        message.attach_alternative(html, "text/html")
+        message.send()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     import os
+
     import django
 
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
