@@ -58,7 +58,7 @@ class Appointment(models.Model):
 
     class Meta:
         db_table = "appointments"
-        constraints = [
+        constraints = [  # Прохання видалити це поле за можливістю і переписати вже реалізовану логіку за допомогою start і end
             models.CheckConstraint(
                 condition=models.Q(end_time__gt=models.F("start_time")),
                 name="appointments_check",
