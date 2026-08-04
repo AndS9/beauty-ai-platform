@@ -1,11 +1,14 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { loginUser, registerUser } from '../../services/authService';
+import { registerUser } from '../../services/authService';
 import './RegisterPage.scss';
 
 export const RegisterPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [phone, setPhone] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -15,7 +18,14 @@ export const RegisterPage = () => {
     event.preventDefault();
     setError(null);
 
-    if (!email.trim() || !password.trim() || !confirmPassword.trim()) {
+    if (
+      !email.trim() ||
+      !password.trim() ||
+      !confirmPassword.trim() ||
+      !firstName.trim() ||
+      !lastName.trim() ||
+      !phone.trim()
+    ) {
       setError('Будь ласка, заповніть всі поля.');
       return;
     }
@@ -27,7 +37,13 @@ export const RegisterPage = () => {
 
     try {
       setIsLoading(true);
-      const data = await registerUser({ email, password });
+      const data = await registerUser({
+        email,
+        password,
+        first_name: firstName,
+        last_name: lastName,
+        phone,
+      });
 
       if (data?.access && data?.refresh) {
         navigate('/');
@@ -56,6 +72,42 @@ export const RegisterPage = () => {
         </p>
 
         <form className="register__form" onSubmit={handleSubmit}>
+          <label className="register__label">
+            Ім'я
+            <input
+              type="text"
+              value={firstName}
+              onChange={e => setFirstName(e.target.value)}
+              className="register__input"
+              placeholder="Ваше ім'я"
+              required
+            />
+          </label>
+
+          <label className="register__label">
+            Прізвище
+            <input
+              type="text"
+              value={lastName}
+              onChange={e => setLastName(e.target.value)}
+              className="register__input"
+              placeholder="Ваше прізвище"
+              required
+            />
+          </label>
+
+          <label className="register__label">
+            Телефон
+            <input
+              type="tel"
+              value={phone}
+              onChange={e => setPhone(e.target.value)}
+              className="register__input"
+              placeholder="+380..."
+              required
+            />
+          </label>
+
           <label className="register__label">
             Email
             <input
