@@ -6,6 +6,7 @@ from .views import (
     CancelAppointmentView,
     AvailableSlotsView,
     MasterUpdateAppointmentStatusView,
+    MasterAppointmentListView,
 )
 
 urlpatterns = [
@@ -23,5 +24,8 @@ urlpatterns = [
     ),
     path(
         "<int:pk>/status/", MasterUpdateAppointmentStatusView.as_view(), name="appointment-status-update"
+    ),
+    path(
+        "master/active/", MasterAppointmentListView.as_view(), name="master-appointments-active"
     ),
 ]

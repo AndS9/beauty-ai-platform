@@ -6,6 +6,7 @@ class Appointment(models.Model):
     STATUS_CHOICES = [
         ("pending", "Pending"),
         ("confirmed", "Confirmed"),
+        ("in_progress", "In progress"),
         ("completed", "Completed"),
         ("cancelled", "Cancelled"),
         ("no_show", "No show"),
@@ -39,8 +40,10 @@ class Appointment(models.Model):
     end_time = models.TimeField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
     cancellation_reason = models.CharField(max_length=255, null=True, blank=True)
+    notes = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         db_table = "appointments"

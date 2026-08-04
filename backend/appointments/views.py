@@ -4,6 +4,7 @@ from datetime import (
 )
 
 from django.db.models import QuerySet
+from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import (
     filters,
@@ -16,13 +17,16 @@ from rest_framework.views import APIView
 from rest_framework.exceptions import APIException
 from rest_framework import status as http_status
 
+from users.permissions import IsMaster
 from .models import Appointment
 from .serializers import (
     AppointmentSerializer,
     RescheduleSerializer,
     CancelSerializer,
     MasterStatusUpdateSerializer,
+    MasterAppointmentListSerializer,
 )
+from .filters import MasterAppointmentFilter
 
 from beauty_service.models import Service
 from salons.models import Salon
@@ -258,7 +262,8 @@ class MasterUpdateAppointmentStatusView(generics.UpdateAPIView):
 
     ALLOWED_TRANSITIONS = {
         "pending": ["confirmed", "cancelled"],
-        "confirmed": ["completed", "cancelled"],
+        "confirmed": ["in_progress", "cancelled"],
+        "in_progress": ["completed"],
         "completed": [],
         "cancelled": [],
     }
@@ -284,7 +289,10 @@ class MasterUpdateAppointmentStatusView(generics.UpdateAPIView):
                 % (current_status, new_status)
             )
 
-        serializer.save()
+        if new_status == "completed":
+            serializer.save(completed_at=timezone.now())
+        else:
+            serializer.save()
 
         send_email_task.delay(
             recipient=appointment.client.email,
@@ -300,3 +308,49 @@ class MasterUpdateAppointmentStatusView(generics.UpdateAPIView):
                 "notification_message": "Статус вашого запису оновлено на '%s'." % appointment.get_status_display(),
             },
         )
+
+
+class MasterAppointmentListView(generics.ListAPIView):
+    """
+    GET /api/appointments/master/active/
+
+    Returns active appointments (pending, confirmed, in_progress) assigned to
+    the currently authenticated master.
+
+    Filters: ?appointment_date=2026-08-01&status=confirmed&client=<email substring>&service=<name substring>
+    Sorting: ?ordering=appointment_date | created_at | status | service__price (add "-" for descending)
+    Pagination: ?page=2
+    """
+
+    serializer_class = MasterAppointmentListSerializer
+    permission_classes = [IsMaster]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_class = MasterAppointmentFilter
+    ordering_fields = ["appointment_date", "created_at", "status", "service__price"]
+    ordering = ["-appointment_date"]
+
+    def get_queryset(self) -> QuerySet[Appointment]:
+        return Appointment.objects.filter(
+            master__user=self.request.user,
+            status__in=["pending", "confirmed", "in_progress"],
+        ).select_related("client", "service", "salon")
+
+    def filter_queryset(self, queryset) -> QuerySet[Appointment]:
+        # validate filter params explicitly, so invalid values return 400
+        # instead of being silently ignored
+        filterset = self.filterset_class(self.request.query_params, queryset=queryset)
+        if not filterset.is_valid():
+            raise serializers.ValidationError(filterset.errors)
+        queryset = filterset.qs
+
+        # validate the "ordering" param against the allowed fields
+        ordering_param = self.request.query_params.get("ordering")
+        if ordering_param:
+            requested_fields = [f.lstrip("-") for f in ordering_param.split(",")]
+            invalid_fields = [f for f in requested_fields if f not in self.ordering_fields]
+            if invalid_fields:
+                raise serializers.ValidationError(
+                    {"ordering": "Недопустимі поля сортування: %s" % ", ".join(invalid_fields)}
+                )
+
+        return super().filter_queryset(queryset)

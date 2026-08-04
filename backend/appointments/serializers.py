@@ -49,3 +49,29 @@ class MasterStatusUpdateSerializer(serializers.ModelSerializer):
             )
 
         return attrs
+
+
+class MasterAppointmentListSerializer(serializers.ModelSerializer):
+    client_name = serializers.SerializerMethodField()
+    service_name = serializers.CharField(source="service.name", read_only=True)
+    duration_minutes = serializers.IntegerField(source="service.duration_minutes", read_only=True)
+    total_price = serializers.DecimalField(source="service.price", max_digits=8, decimal_places=2, read_only=True)
+    salon_name = serializers.CharField(source="salon.name", read_only=True)
+
+    class Meta:
+        model = Appointment
+        fields = [
+            "id",
+            "appointment_date",
+            "start_time",
+            "client_name",
+            "service_name",
+            "status",
+            "duration_minutes",
+            "total_price",
+            "salon_name",
+            "created_at",
+        ]
+
+    def get_client_name(self, obj) -> str:
+        return obj.client.get_full_name() or obj.client.email
