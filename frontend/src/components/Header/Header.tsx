@@ -1,5 +1,5 @@
 /* eslint-disable max-len */
-import { NavLink, Link } from 'react-router-dom';
+import { NavLink, Link, useLocation } from 'react-router-dom';
 import './Header.scss';
 import classNames from 'classnames';
 import { Aside } from '../Aside/Aside';
@@ -26,8 +26,9 @@ export const Header = () => {
   const cartItemsCount = 0;
   const favoritesCount = 0;
 
+  const location = useLocation();
+
   useEffect(() => {
-    // Check authentication status
     const checkAuth = () => {
       setAuthState({
         isAuth: isAuthenticated(),
@@ -35,13 +36,13 @@ export const Header = () => {
       });
     };
 
-    // Check on mount
+    // Check on mount and when route changes
     checkAuth();
 
     // Listen for storage changes (logout from other tabs)
     window.addEventListener('storage', checkAuth);
     return () => window.removeEventListener('storage', checkAuth);
-  }, []);
+  }, [location]);
 
   const getLinkClass = ({ isActive }: { isActive: boolean }) =>
     classNames('navbar-item', {

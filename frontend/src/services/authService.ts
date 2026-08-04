@@ -1,7 +1,6 @@
 // Google OAuth service for handling authentication
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+export const API_BASE_URL = import.meta.env.VITE_API_URL ?? '/api';
 
 export interface GoogleAuthResponse {
   access_token?: string;
@@ -76,9 +75,9 @@ export interface LoginResponse {
   refresh: string;
 }
 
-const storeTokens = (data: { access: string; refresh: string }) => {
-  localStorage.setItem('authToken', data.access);
-  localStorage.setItem('refreshToken', data.refresh);
+const storeTokens = (access: string, refresh: string) => {
+  localStorage.setItem('authToken', access);
+  localStorage.setItem('refreshToken', refresh);
 };
 
 const storeAccessToken = (access: string) => {
@@ -170,7 +169,17 @@ export const registerUser = async (payload: RegisterPayload) => {
     const data = await response.json();
 
     if ('access' in data && 'refresh' in data) {
-      storeTokens(data);
+      storeTokens(data.access, data.refresh);
+    } else if ('access' in data) {
+      storeAccessToken(data.access);
+    } else if ('access_token' in data) {
+      storeAccessToken(data.access_token);
+    } else if ('token' in data && data.token) {
+      localStorage.setItem('authToken', data.token);
+    }
+
+    if ('user' in data && data.user) {
+      localStorage.setItem('user', JSON.stringify(data.user));
     }
 
     return data;
@@ -200,7 +209,13 @@ export const loginUser = async (payload: LoginPayload) => {
     }
 
     const data: LoginResponse = await response.json();
-    storeTokens(data);
+    if ('access' in data && 'refresh' in data) {
+      storeTokens(data.access, data.refresh);
+    } else if ('access_token' in data) {
+      storeAccessToken(data.access_token);
+    } else if ('token' in data && data.token) {
+      localStorage.setItem('authToken', data.token);
+    }
     return data;
   } catch (error) {
     console.error('Error logging in user:', error);
