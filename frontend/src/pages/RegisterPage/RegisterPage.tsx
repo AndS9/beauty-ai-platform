@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { registerUser } from '../../services/authService';
+import { loginUser, registerUser } from '../../services/authService';
 import './RegisterPage.scss';
 
 export const RegisterPage = () => {
@@ -27,8 +27,14 @@ export const RegisterPage = () => {
 
     try {
       setIsLoading(true);
-      await registerUser({ email, password });
-      navigate('/login');
+      const data = await registerUser({ email, password });
+
+      if (data?.access && data?.refresh) {
+        navigate('/');
+        window.location.reload();
+      } else {
+        navigate('/');
+      }
     } catch (registerError) {
       const message =
         registerError instanceof Error

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from '../../services/authService';
 import './VerifyEmailPage.scss';
 
 export const VerifyEmailPage = () => {
@@ -20,7 +21,7 @@ export const VerifyEmailPage = () => {
 
       try {
         const response = await fetch(
-          `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/users/verify-email/${uidb64}/${token}/`,
+          `${API_BASE_URL}/users/verify-email/${uidb64}/${token}/`,
           {
             method: 'GET',
           },
