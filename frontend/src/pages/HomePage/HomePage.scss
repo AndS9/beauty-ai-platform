@@ -374,7 +374,6 @@
   box-shadow: 0 12px 30px rgba(54, 23, 172, 0.06);
   display: grid;
   gap: 0;
-
 }
 
 .home-page__result-card-top {
@@ -414,8 +413,19 @@
 }
 
 .home-page__result-card-image {
-  min-height: 140px;
+  min-height: 160px;
+  max-height: 220px;
   background: linear-gradient(180deg, #f7f0ff 0%, #ffffff 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.home-page__result-card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
 }
 
 .home-page__result-card-body {
@@ -724,4 +734,3 @@
   font-size: 14px;
   color: #666;
 }
-
