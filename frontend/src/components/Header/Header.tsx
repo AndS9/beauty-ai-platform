@@ -3,7 +3,6 @@ import { NavLink, Link } from 'react-router-dom';
 import './Header.scss';
 import classNames from 'classnames';
 import { Aside } from '../Aside/Aside';
-import { GoogleAuthButton } from '../GoogleAuthButton/GoogleAuthButton';
 import { useState, useEffect } from 'react';
 import {
   isAuthenticated,
@@ -108,7 +107,18 @@ export const Header = () => {
             </div>
           ) : (
             <div className="header__auth-section">
-              <GoogleAuthButton />
+              <Link
+                to="/login"
+                className="header__button header__button--ghost"
+              >
+                Увійти
+              </Link>
+              <Link
+                to="/register"
+                className="header__button header__button--ghost"
+              >
+                Реєстрація
+              </Link>
             </div>
           )}
 

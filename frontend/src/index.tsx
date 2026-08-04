@@ -5,6 +5,9 @@ import { GoogleOAuthProvider } from '@react-oauth/google';
 import { App } from './App';
 /* import { CartProvider } from './Functional/CartContext/CartContext'; */
 import { HomePage } from './pages/HomePage/HomePage';
+import { LoginPage } from './pages/LoginPage/LoginPage';
+import { RegisterPage } from './pages/RegisterPage/RegisterPage';
+import { VerifyEmailPage } from './pages/VerifyEmailPage/VerifyEmailPage';
 /* import { Aside } from './components/Aside/Aside'; */
 /* import { PhonePage } from './pages/PhonePage/PhonePage'; */
 /* import { TabletPage } from './pages/TabletPage/TabletPage'; */
@@ -24,6 +27,12 @@ const Root = () => (
       <Routes>
         <Route path="/" element={<App />}>
           <Route index element={<HomePage />} />
+          <Route path="login" element={<LoginPage />} />
+          <Route path="register" element={<RegisterPage />} />
+          <Route
+            path="verify-email/:uidb64/:token"
+            element={<VerifyEmailPage />}
+          />
           {/* <Route path="menu" element={<Aside />} /> */}
           {/* <Route path="phones" element={<PhonePage />} /> */}
           {/* <Route path="tablets" element={<TabletPage />} /> */}
