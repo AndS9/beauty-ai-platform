@@ -65,6 +65,12 @@ export interface RegisterPayload {
   password: string;
 }
 
+export interface ExtendedRegisterPayload extends RegisterPayload {
+  first_name: string;
+  last_name: string;
+  phone: string;
+}
+
 export interface LoginPayload {
   email: string;
   password: string;
@@ -148,7 +154,7 @@ export const verifyToken = async (token?: string) => {
   return true;
 };
 
-export const registerUser = async (payload: RegisterPayload) => {
+export const registerUser = async (payload: ExtendedRegisterPayload) => {
   try {
     const response = await fetch(`${API_BASE_URL}/users/register/`, {
       method: 'POST',
