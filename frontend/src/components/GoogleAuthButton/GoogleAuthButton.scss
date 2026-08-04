@@ -1,22 +1,30 @@
 .google-auth-button {
-  display: flex;
-  flex-direction: column;
+  display: inline-flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
+}
 
-  &__error {
-    color: #dc3545;
-    font-size: 14px;
-    margin: 0;
-    text-align: center;
-  }
+.google-auth-button > div,
+.google-auth-button > button,
+.google-auth-button > span {
+  display: inline-flex;
+  align-items: center;
+}
 
-  &__loading {
-    color: #6c757d;
-    font-size: 12px;
-    margin: 0;
-    animation: pulse 1.5s ease-in-out infinite;
-  }
+.google-auth-button__error,
+.google-auth-button__loading {
+  color: #6c757d;
+  font-size: 12px;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.google-auth-button__error {
+  color: #dc3545;
+}
+
+.google-auth-button__loading {
+  animation: pulse 1.5s ease-in-out infinite;
 }
 
 @keyframes pulse {
