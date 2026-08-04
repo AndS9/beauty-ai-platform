@@ -38,6 +38,8 @@ class Appointment(models.Model):
     appointment_date = models.DateField()
     start_time = models.TimeField()
     end_time = models.TimeField()
+    # start = models.DateTimeField()
+    # end = models.DateTimeField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
     cancellation_reason = models.CharField(max_length=255, null=True, blank=True)
     notes = models.TextField(null=True, blank=True)
@@ -54,5 +56,62 @@ class Appointment(models.Model):
             ),
         ]
 
+    # class Meta:
+    #     db_table = "appointments"
+    #     constraints = (
+    #         models.CheckConstraint(
+    #             condition=models.Q(end__gt=models.F("start")),
+    #             name="appointments_check",
+    #         ),
+    #     )
+
+    # def __str__(self) -> str:
+    #     return f"Appointment #{self.id} — ({self.start} to {self.end})"
+
     def __str__(self) -> str:
         return f"Appointment #{self.id} — {self.appointment_date} {self.start_time}"
+
+
+
+
+class AppointmentReminder(models.Model):
+    class ReminderType(models.TextChoices):
+        ONE_HOUR = "1h", "1 hour"
+        TWENTY_FOUR_HOURS = "24h", "24 hours"
+
+    class Status(models.TextChoices):
+        PENDING = "pending"
+        SENT = "sent"
+        FAILED = "failed"
+
+    appointment = models.ForeignKey(
+        Appointment,
+        on_delete=models.CASCADE,
+        related_name="reminders",
+    )
+
+    reminder_type = models.CharField(
+        max_length=10,
+        choices=ReminderType.choices,
+    )
+
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PENDING,
+    )
+
+    sent_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = (
+            models.UniqueConstraint(
+                fields=["appointment", "reminder_type"],
+                name="unique_reminder_type_per_appointment",
+            ),
+        )
