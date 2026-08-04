@@ -26,8 +26,12 @@ from .serializers import (
     MasterStatusUpdateSerializer,
     MasterAppointmentListSerializer,
     MasterAppointmentDetailSerializer,
+    MasterAppointmentHistorySerializer
 )
-from .filters import MasterAppointmentFilter
+from .filters import (
+    MasterAppointmentFilter,
+    MasterAppointmentHistoryFilter
+)
 
 from beauty_service.models import Service
 from salons.models import Salon
@@ -373,3 +377,49 @@ class MasterAppointmentDetailView(generics.RetrieveAPIView):
         return Appointment.objects.filter(master__user=self.request.user).select_related(
             "client", "service", "salon"
         )
+
+
+class MasterAppointmentHistoryView(generics.ListAPIView):
+    """
+    GET /api/appointments/master/history/
+
+    Returns completed and cancelled appointments assigned to the currently
+    authenticated master.
+
+    Filters: ?date_from=2026-07-01&date_to=2026-07-31&status=completed&client=<email substring>&service=<name substring>
+    Sorting: ?ordering=appointment_date | created_at | status | service__price (add "-" for descending)
+    Pagination: ?page=2
+    """
+
+    serializer_class = MasterAppointmentHistorySerializer
+    permission_classes = [IsMaster]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_class = MasterAppointmentHistoryFilter
+    ordering_fields = ["appointment_date", "created_at", "status", "service__price"]
+    ordering = ["-appointment_date"]
+
+    def get_queryset(self) -> QuerySet[Appointment]:
+        return Appointment.objects.filter(
+            master__user=self.request.user,
+            status__in=["completed", "cancelled"],
+        ).select_related("client", "service")
+
+    def filter_queryset(self, queryset) -> QuerySet[Appointment]:
+        # validate filter params explicitly, so invalid values return 400
+        # instead of being silently ignored
+        filterset = self.filterset_class(self.request.query_params, queryset=queryset)
+        if not filterset.is_valid():
+            raise serializers.ValidationError(filterset.errors)
+        queryset = filterset.qs
+
+        # validate the "ordering" param against the allowed fields
+        ordering_param = self.request.query_params.get("ordering")
+        if ordering_param:
+            requested_fields = [f.lstrip("-") for f in ordering_param.split(",")]
+            invalid_fields = [f for f in requested_fields if f not in self.ordering_fields]
+            if invalid_fields:
+                raise serializers.ValidationError(
+                    {"ordering": "Недопустимі поля сортування: %s" % ", ".join(invalid_fields)}
+                )
+
+        return super().filter_queryset(queryset)
