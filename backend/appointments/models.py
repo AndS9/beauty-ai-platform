@@ -38,9 +38,9 @@ class Appointment(models.Model):
         db_column="service_id",
     )
     promo_id = models.IntegerField(null=True, blank=True)
-    appointment_date = models.DateField()
-    start_time = models.TimeField()
-    end_time = models.TimeField()
+    appointment_date = models.DateField() # Прохання видалити це поле за можливістю і переписати вже реалізовану логіку за допомогою start і end
+    start_time = models.TimeField()  # Прохання видалити це поле за можливістю і переписати вже реалізовану логіку за допомогою start і end
+    end_time = models.TimeField()  # Прохання видалити це поле за можливістю і переписати вже реалізовану логіку за допомогою start і end
     start = models.DateTimeField(
         null=True,
         blank=True,
@@ -77,10 +77,10 @@ class Appointment(models.Model):
     # def __str__(self) -> str:
     #     return f"Appointment #{self.id} — ({self.start} to {self.end})"
 
-    def __str__(self) -> str:
+    def __str__(self) -> str:  # Прохання видалити цей метод за можливістю і переписати вже реалізовану логіку за допомогою start і end
         return f"Appointment #{self.id} — {self.appointment_date} {self.start_time}"
 
-    def save(self, *args, **kwargs):  # костиль
+    def save(self, *args, **kwargs):  # Прохання видалити цю функцію за можливістю і переписати вже реалізовану логіку за допомогою start і end
         self.start = timezone.make_aware(
             datetime.combine(self.appointment_date, self.start_time)
         )
