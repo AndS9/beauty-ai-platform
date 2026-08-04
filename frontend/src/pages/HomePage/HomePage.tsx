@@ -36,6 +36,7 @@ const result = [
     ],
     available: 'Завтра з 10:00',
     badge: 'Топовий',
+    image: './photo/luna.jpg',
   },
   {
     title: 'Perfect Nails',
@@ -51,6 +52,7 @@ const result = [
     ],
     available: 'Доступний сьогодні',
     badge: 'Популярний',
+    image: './photo/perfect_nails.png',
   },
   {
     title: 'Перукарня "Стиль"',
@@ -66,6 +68,7 @@ const result = [
     ],
     available: 'Вільні місця',
     badge: 'Рекомендовано',
+    image: './photo/style.jpg',
   },
   {
     title: 'Beauty Studio',
@@ -81,6 +84,7 @@ const result = [
     ],
     available: 'Доступний сьогодні',
     badge: 'AI Рекомендація',
+    image: './photo/beauty.jpg',
   },
   {
     title: 'Анна Коваль',
@@ -96,6 +100,7 @@ const result = [
     ],
     available: 'Доступний сьогодні о 18:00',
     badge: 'AI Рекомендація',
+    image: './photo/anna.png',
   },
   {
     title: 'Chop-Chop Barbershop',
@@ -111,6 +116,7 @@ const result = [
     ],
     available: 'Доступний сьогодні',
     badge: 'AI Рекомендація',
+    image: './photo/chop.png',
   },
 ];
 
@@ -448,7 +454,9 @@ export const HomePage = () => {
                   </div>
 
                   <div className="home-page__result-card-all">
-                    <div className="home-page__result-card-image" />
+                    <div className="home-page__result-card-image">
+                      {item.image && <img src={item.image} alt={item.title} />}
+                    </div>
                     <div className="home-page__result-card-body">
                       <div className="home-page__result-card-label">
                         {item.category}
