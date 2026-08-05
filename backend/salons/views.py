@@ -35,28 +35,58 @@ class SalonDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 
 class SalonOrderingFilter(OrderingFilter):
+    ORDERING_MAP = {
+        "rating": "average_rating",
+        "name": "name",
+        "reviews": "total_reviews",
+        "popularity": "completed_services",
+    }
+
     def get_ordering(self, request, queryset, view):
         ordering = super().get_ordering(request, queryset, view)
 
-        if ordering == ["popularity"]:
-            return ["-completed_services", "-average_rating"]
+        if not ordering:
+            return ordering
 
-        if ordering == ["-popularity"]:
-            return ["completed_services", "average_rating"]
+        result = []
 
-        return ordering
+        for field in ordering:
+            desc = field.startswith("-")
+            key = field.lstrip("-")
+
+            mapped = self.ORDERING_MAP.get(key, key)
+
+            if key == "popularity":
+                if desc:
+                    result.extend(
+                        [
+                            "-completed_services",
+                            "-average_rating",
+                        ]
+                    )
+                else:
+                    result.extend(
+                        [
+                            "completed_services",
+                            "average_rating",
+                        ]
+                    )
+            else:
+                result.append(f"-{mapped}" if desc else mapped)
+
+        return result
 
 
 class SalonListView(generics.ListAPIView):
     serializer_class = SalonListSerializer
     filter_backends = (SalonOrderingFilter,)
 
-    ordering_fields = {
-        "rating": "average_rating",
-        "name": "name",
-        "reviews": "total_reviews",
-        "popularity": "completed_services",
-    }
+    ordering_fields = (
+        "rating",
+        "name",
+        "reviews",
+        "popularity",
+    )
 
     ordering = ("-average_rating",)
 
@@ -81,5 +111,6 @@ class SalonListView(generics.ListAPIView):
                     distinct=True,
                 ),
             )
+            .filter(service_count__gt=0)
             .prefetch_related("working_hours")
         )
