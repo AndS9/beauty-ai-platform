@@ -1,7 +1,14 @@
 from django.conf import settings
 from django.db import models
-from django.db.models import Q, F
+from django.db.models import F, Q
 
+from .services import generate_upload_path
+
+
+class SalonStatus(models.TextChoices):
+    ACTIVE = "active", "Active"
+    INACTIVE = "inactive", "Inactive"
+    PENDING = "pending", "Pending"
 
 class AbstractSalon(models.Model):
     name = models.CharField(max_length=100)
@@ -22,6 +29,21 @@ class AbstractSalon(models.Model):
     external_booking_url = models.URLField(
         null=True,
         blank=True,
+    )
+    description = models.TextField(
+        null=True,
+        blank=True,
+    )
+    logo = models.ImageField(
+        upload_to=generate_upload_path,
+    )
+    available_status = models.CharField(
+        max_length=20,
+    )
+    salon_status = models.CharField(
+        max_length=20,
+        choices=SalonStatus.choices,
+        default=SalonStatus.PENDING,
     )
 
     class Meta:
@@ -48,7 +70,9 @@ class Salon(AbstractSalon):
     class Meta:
         db_table = "salons"
         constraints = [
-            models.UniqueConstraint(fields=["name", "address"], name="unique_partner_salon_name_address"),
+            models.UniqueConstraint(
+                fields=["name", "address"], name="unique_partner_salon_name_address"
+            ),
         ]
 
 
@@ -65,7 +89,9 @@ class CachedSalon(AbstractSalon):
     class Meta:
         db_table = "cached_salons"
         constraints = [
-            models.UniqueConstraint(fields=["name", "address"], name="unique_cached_salon_name_address"),
+            models.UniqueConstraint(
+                fields=["name", "address"], name="unique_cached_salon_name_address"
+            ),
         ]
 
 
@@ -107,12 +133,12 @@ class SalonWorkingHours(models.Model):
             ),
             models.CheckConstraint(
                 condition=(
-                        Q(is_closed=True)
-                        | (
-                                Q(opening_time__isnull=False)
-                                & Q(closing_time__isnull=False)
-                                & Q(opening_time__lt=F("closing_time"))
-                        )
+                    Q(is_closed=True)
+                    | (
+                        Q(opening_time__isnull=False)
+                        & Q(closing_time__isnull=False)
+                        & Q(opening_time__lt=F("closing_time"))
+                    )
                 ),
                 name="valid_salon_working_hours",
             ),

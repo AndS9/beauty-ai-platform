@@ -1,8 +1,11 @@
+from django.db.models import Avg, Count, Q
 from rest_framework import generics
+from rest_framework.filters import OrderingFilter
+from users.models import MasterStatus
 
-from .models import Salon
-from .serializers import SalonSerializer
+from .models import Salon, SalonStatus
 from .permissions import IsAdminOrReadOnlyAll
+from .serializers import SalonListSerializer, SalonSerializer
 
 
 class SalonListCreateView(generics.ListCreateAPIView):
@@ -29,3 +32,54 @@ class SalonDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Salon.objects.prefetch_related("masters")
     serializer_class = SalonSerializer
     permission_classes = [IsAdminOrReadOnlyAll]
+
+
+class SalonOrderingFilter(OrderingFilter):
+    def get_ordering(self, request, queryset, view):
+        ordering = super().get_ordering(request, queryset, view)
+
+        if ordering == ["popularity"]:
+            return ["-completed_services", "-average_rating"]
+
+        if ordering == ["-popularity"]:
+            return ["completed_services", "average_rating"]
+
+        return ordering
+
+
+class SalonListView(generics.ListAPIView):
+    serializer_class = SalonListSerializer
+    filter_backends = (SalonOrderingFilter,)
+
+    ordering_fields = {
+        "rating": "average_rating",
+        "name": "name",
+        "reviews": "total_reviews",
+        "popularity": "completed_services",
+    }
+
+    ordering = ("-average_rating",)
+
+    def get_queryset(self):
+        return (
+            Salon.objects.filter(
+                masters__account_status=MasterStatus.ACTIVE,
+                salon_status=SalonStatus.ACTIVE,
+            )
+            .annotate(
+                average_rating=Avg("salon_reviews_received__rating"),
+                total_reviews=Count("salon_reviews_received", distinct=True),
+                masters_count=Count("masters", distinct=True),
+                service_count=Count(
+                    "masters__services",
+                    filter=Q(masters__services__is_active=True),
+                    distinct=True,
+                ),
+                completed_services=Count(
+                    "appointments",
+                    filter=Q(appointments__status="completed"),
+                    distinct=True,
+                ),
+            )
+            .prefetch_related("working_hours")
+        )
