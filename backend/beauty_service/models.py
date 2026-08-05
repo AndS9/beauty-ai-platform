@@ -28,11 +28,11 @@ class Service(models.Model):
         constraints = [
             models.CheckConstraint(
                 condition=models.Q(duration_minutes__gt=0),
-                name="services_duration_minutes_check",
+                name="services_duration_minutes_checks",
             ),
             models.CheckConstraint(
                 condition=models.Q(price__gte=0),
-                name="services_price_check",
+                name="services_price_checks",
             ),
         ]
 

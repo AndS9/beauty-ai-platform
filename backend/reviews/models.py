@@ -30,7 +30,7 @@ class Review(models.Model):
         constraints = (
             models.CheckConstraint(
                 condition=models.Q(rating__gte=1) & models.Q(rating__lte=5),
-                name="reviews_rating_check",
+                name="reviews_rating_checks",
             ),
         )
 
@@ -65,7 +65,7 @@ class SalonReview(models.Model):
         constraints = (
             models.CheckConstraint(
                 condition=models.Q(rating__gte=1) & models.Q(rating__lte=5),
-                name="salon_reviews_rating_check",
+                name="salon_reviews_rating_checks",
             ),
         )
 
