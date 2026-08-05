@@ -15,6 +15,7 @@ from users.views import (
     ManageMasterView,
     ManageUserView,
     ManageWorkingScheduleView,
+    MasterListView,
     SetPasswordView,
     VerifyEmailView,
     WorkingScheduleListCreateView,
@@ -55,4 +56,5 @@ urlpatterns = [
                       ManageWorkingScheduleView.as_view(),
                       name="working-schedule-detail",
                   ),
+                  path("masters", MasterListView.as_view(), name="master-list"),
               ] + router.urls

@@ -8,6 +8,7 @@ from phonenumber_field.serializerfields import PhoneNumberField
 from rest_framework import serializers
 from salons.models import Salon
 
+import services
 from users.models import DayOff, Master, WorkingSchedule
 from users.services.auth_service import UserRegistrationService
 
@@ -261,6 +262,36 @@ class MasterProfileSerializer(serializers.ModelSerializer):
         instance.user.save()
 
         return super().update(instance, validated_data)
+
+class SalonShortSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Salon
+        fields = (
+            "id",
+            "name",
+        )
+
+class MasterListSerializer(serializers.ModelSerializer):
+    first_name = serializers.CharField(source="user.first_name")
+    last_name = serializers.CharField(source="user.last_name")
+    photo = serializers.ImageField(source="user.photo")
+    average_rating = serializers.FloatField(source="rating", read_only=True)
+    salons = SalonShortSerializer(many=True, read_only=True)
+    services = ServiceSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Master
+        fields = (
+            "id",
+            "first_name",
+            "last_name",
+            "photo",
+            "average_rating",
+            "years_of_experience",
+            "salons",
+            "services",
+        )
+        read_only_fields = ("id",)
 
 
 class ChangePasswordSerializer(serializers.Serializer):

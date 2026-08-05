@@ -1,18 +1,26 @@
+from flask.cli import F
+
+from appointments.models import Appointment
+from django.db.models import Avg, Count, Q, Prefetch, Value
+from django.db.models.functions import Concat
 from django.shortcuts import render
 from django.views import View
 from rest_framework import generics, status, viewsets
 from rest_framework.exceptions import ValidationError
+from rest_framework.filters import OrderingFilter
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from users.models import DayOff, WorkingSchedule
+from salons.models import Salon, SalonStatus
+from users.models import DayOff, Master, MasterStatus, WorkingSchedule
 from users.permissions import IsMaster
 from users.serializers import (
     ChangePasswordSerializer,
     DayOffSerializer,
     GoogleLoginSerializer,
+    MasterListSerializer,
     MasterProfileSerializer,
     SetPasswordSerializer,
     UserProfileSerializer,
@@ -40,6 +48,51 @@ class ManageMasterView(generics.RetrieveUpdateAPIView):
 
     def get_object(self):
         return self.request.user.master
+
+
+class MasterListView(generics.ListAPIView):
+    serializer_class = MasterListSerializer
+    permission_classes = (IsAuthenticated,)
+
+    filter_backends = (OrderingFilter,)
+
+    ordering_fields = (
+        "rating",
+        "name",
+        "years_of_experience",
+        "popularity",
+    )
+
+    ordering = ("-rating",)
+
+    def get_queryset(self):
+        return (
+            Master.objects.filter(
+                account_status=MasterStatus.ACTIVE,
+            )
+            .prefetch_related(
+                Prefetch(
+                    "salons",
+                    queryset=Salon.objects.filter(
+                        salon_status=SalonStatus.ACTIVE,
+                    ),
+                )
+            )
+            .annotate(
+                rating=Avg("reviews_received__rating"),
+                name=Concat(
+                    "user__first_name",
+                    Value(" "),
+                    "user__last_name",
+                ),
+                popularity=Count(
+                    "master_appointments",
+                    filter=Q(master_appointments__status="completed"),
+                    distinct=True,
+                ),
+            )
+            .distinct()
+        )
 
 
 class WorkingScheduleListCreateView(generics.ListCreateAPIView):
