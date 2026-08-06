@@ -69,6 +69,10 @@ export interface ExtendedRegisterPayload extends RegisterPayload {
   first_name: string;
   last_name: string;
   phone: string;
+  phone_number?: string;
+  password1?: string;
+  password2?: string;
+  password_confirmation?: string;
 }
 
 export interface LoginPayload {
@@ -76,10 +80,17 @@ export interface LoginPayload {
   password: string;
 }
 
-export interface LoginResponse {
-  access: string;
-  refresh: string;
-}
+export type LoginResponse =
+  | {
+      access: string;
+      refresh: string;
+    }
+  | {
+      access_token: string;
+    }
+  | {
+      token: string;
+    };
 
 const storeTokens = (access: string, refresh: string) => {
   localStorage.setItem('authToken', access);
@@ -160,16 +171,30 @@ export const registerUser = async (payload: ExtendedRegisterPayload) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        Accept: 'application/json',
       },
       body: JSON.stringify(payload),
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
-      throw new Error(
-        errorData?.message ||
-          `Registration failed with status ${response.status}`,
-      );
+      const responseText = await response.text();
+      let errorMessage = `Registration failed with status ${response.status}`;
+
+      try {
+        const errorData = JSON.parse(responseText);
+        errorMessage =
+          errorData?.message ||
+          errorData?.detail ||
+          errorData?.error ||
+          JSON.stringify(errorData) ||
+          errorMessage;
+      } catch {
+        if (responseText) {
+          errorMessage = responseText;
+        }
+      }
+
+      throw new Error(errorMessage);
     }
 
     const data = await response.json();

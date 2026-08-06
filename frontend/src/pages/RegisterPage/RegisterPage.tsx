@@ -40,9 +40,13 @@ export const RegisterPage = () => {
       const data = await registerUser({
         email,
         password,
+        password1: password,
+        password2: confirmPassword,
+        password_confirmation: confirmPassword,
         first_name: firstName,
         last_name: lastName,
         phone,
+        phone_number: phone,
       });
 
       if (data?.access && data?.refresh) {
