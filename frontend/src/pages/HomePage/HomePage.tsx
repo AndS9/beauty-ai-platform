@@ -37,6 +37,9 @@ const result = [
     available: 'Завтра з 10:00',
     badge: 'Топовий',
     image: './photo/luna.jpg',
+    // real coordinates (latitude, longitude)
+    lat: 50.4471,
+    lng: 30.5202,
   },
   {
     title: 'Perfect Nails',
@@ -53,6 +56,8 @@ const result = [
     available: 'Доступний сьогодні',
     badge: 'Популярний',
     image: './photo/perfect_nails.png',
+    lat: 50.4523,
+    lng: 30.5247,
   },
   {
     title: 'Перукарня "Стиль"',
@@ -69,6 +74,8 @@ const result = [
     available: 'Вільні місця',
     badge: 'Рекомендовано',
     image: './photo/style.jpg',
+    lat: 50.455,
+    lng: 30.5189,
   },
   {
     title: 'Beauty Studio',
@@ -85,6 +92,8 @@ const result = [
     available: 'Доступний сьогодні',
     badge: 'AI Рекомендація',
     image: './photo/beauty.jpg',
+    lat: 50.4488,
+    lng: 30.5301,
   },
   {
     title: 'Анна Коваль',
@@ -101,6 +110,8 @@ const result = [
     available: 'Доступний сьогодні о 18:00',
     badge: 'AI Рекомендація',
     image: './photo/anna.png',
+    lat: 50.4496,
+    lng: 30.5225,
   },
   {
     title: 'Chop-Chop Barbershop',
@@ -117,6 +128,8 @@ const result = [
     available: 'Доступний сьогодні',
     badge: 'AI Рекомендація',
     image: './photo/chop.png',
+    lat: 50.4542,
+    lng: 30.5353,
   },
 ];
 
@@ -140,6 +153,27 @@ export const HomePage = () => {
 
   const getDistanceNumber = (distance: string) =>
     Number(distance.replace(',', '.').match(/\d+(\.\d+)?/)?.[0] || 0);
+
+  // returns distance in kilometers between two coords
+  const getDistanceKm = (
+    lat1: number,
+    lon1: number,
+    lat2: number,
+    lon2: number,
+  ) => {
+    const toRad = (v: number) => (v * Math.PI) / 180;
+    const R = 6371; // Earth radius km
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(toRad(lat1)) *
+        Math.cos(toRad(lat2)) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  };
 
   const [favorites, setFavorites] = useState<string[]>([]);
 
@@ -266,8 +300,7 @@ export const HomePage = () => {
                 placeholder="Пошук салонів, спеціалістів або послуг"
               />
             </label>
-            <div className="hero__search-location-selector">
-            </div>
+            <div className="hero__search-location-selector"></div>
             <button
               type="button"
               className="hero__search-button"
@@ -533,27 +566,57 @@ export const HomePage = () => {
                   </Marker>
                 )}
                 {filteredResults.map(item => {
-                  const distance = getDistanceNumber(item.distance);
-                  if (userLocation && distance <= 5) {
-                    return (
-                      <Marker
-                        key={item.title}
-                        position={[
-                          userLocation.lat + Math.random() * 0.01 - 0.005,
-                          userLocation.lng + Math.random() * 0.01 - 0.005,
-                        ]}
-                      >
-                        <Popup>
-                          <strong>{item.title}</strong>
-                          <br />
-                          {item.category}
-                          <br />
-                          {item.distance}
-                        </Popup>
-                      </Marker>
-                    );
+                  if (
+                    typeof item.lat !== 'number' ||
+                    typeof item.lng !== 'number'
+                  ) {
+                    return null;
                   }
-                  return null;
+
+                  const actualDistanceKm = userLocation
+                    ? getDistanceKm(
+                        userLocation.lat,
+                        userLocation.lng,
+                        item.lat,
+                        item.lng,
+                      )
+                    : null;
+
+                  // If we have user location, only show salons within 5 km
+                  if (userLocation) {
+                    if (actualDistanceKm !== null && actualDistanceKm <= 5) {
+                      return (
+                        <Marker
+                          key={item.title}
+                          position={[item.lat, item.lng]}
+                        >
+                          <Popup>
+                            <strong>{item.title}</strong>
+                            <br />
+                            {item.category}
+                            <br />
+                            {actualDistanceKm !== null
+                              ? `${actualDistanceKm.toFixed(1)} км від вас`
+                              : item.distance}
+                          </Popup>
+                        </Marker>
+                      );
+                    }
+                    return null;
+                  }
+
+                  // If no user location, show all salon markers
+                  return (
+                    <Marker key={item.title} position={[item.lat, item.lng]}>
+                      <Popup>
+                        <strong>{item.title}</strong>
+                        <br />
+                        {item.category}
+                        <br />
+                        {item.distance}
+                      </Popup>
+                    </Marker>
+                  );
                 })}
               </MapContainer>
             </div>
