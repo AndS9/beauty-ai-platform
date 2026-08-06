@@ -21,6 +21,7 @@ from users.models import (
     Master,
     WorkingSchedule,
 )
+
 from users.services.auth_service import UserRegistrationService
 
 
@@ -300,6 +301,7 @@ class MasterProfileSerializer(serializers.ModelSerializer):
 
         return super().update(instance, validated_data)
 
+
 class SalonShortSerializer(serializers.ModelSerializer):
     class Meta:
         model = Salon
@@ -307,6 +309,7 @@ class SalonShortSerializer(serializers.ModelSerializer):
             "id",
             "name",
         )
+
 
 class MasterListSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(source="user.first_name")
@@ -369,3 +372,8 @@ class GoogleLoginSerializer(serializers.Serializer):
     """Serializer for accepting Google ID tokens during OAuth2 authentication."""
 
     id_token = serializers.CharField()
+
+
+class VerifyEmailSerializer(serializers.Serializer):
+    id = serializers.CharField(required=True)
+    token = serializers.CharField(required=True)
