@@ -1,7 +1,9 @@
 services:
 
   web:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile_local
     command: >
       sh -c "
         python manage.py migrate &&
@@ -17,7 +19,9 @@ services:
       - redis
 
   celery:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile_local
     command: celery -A config worker -l info
     env_file:
       - .env
@@ -27,7 +31,9 @@ services:
       - redis
 
   beat:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile_local
     command: celery -A config beat -l info
     env_file:
       - .env
