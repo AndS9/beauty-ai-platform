@@ -8,7 +8,6 @@ from phonenumber_field.serializerfields import PhoneNumberField
 from rest_framework import serializers
 from salons.models import Salon
 
-import services
 from users.models import DayOff, Master, WorkingSchedule
 from users.services.auth_service import UserRegistrationService
 
@@ -263,6 +262,7 @@ class MasterProfileSerializer(serializers.ModelSerializer):
 
         return super().update(instance, validated_data)
 
+
 class SalonShortSerializer(serializers.ModelSerializer):
     class Meta:
         model = Salon
@@ -270,6 +270,7 @@ class SalonShortSerializer(serializers.ModelSerializer):
             "id",
             "name",
         )
+
 
 class MasterListSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(source="user.first_name")
@@ -325,3 +326,8 @@ class SetPasswordSerializer(serializers.Serializer):
 
 class GoogleLoginSerializer(serializers.Serializer):
     id_token = serializers.CharField()
+
+
+class VerifyEmailSerializer(serializers.Serializer):
+    id = serializers.CharField(required=True)
+    token = serializers.CharField(required=True)

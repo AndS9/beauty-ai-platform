@@ -37,7 +37,7 @@ urlpatterns = [
                   path("token/verify/", TokenVerifyView.as_view(), name="token_verify"),
                   path("me/", ManageUserView.as_view(), name="manage"),
                   path(
-                      "verify-email/<uidb64>/<token>/",
+                      "verify-email/",
                       VerifyEmailView.as_view(),
                       name="verify-email",
                   ),

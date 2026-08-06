@@ -1,7 +1,4 @@
-from flask.cli import F
-
-from appointments.models import Appointment
-from django.db.models import Avg, Count, Q, Prefetch, Value
+from django.db.models import Avg, Count, Prefetch, Q, Value
 from django.db.models.functions import Concat
 from django.shortcuts import render
 from django.views import View
@@ -12,8 +9,8 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
-
 from salons.models import Salon, SalonStatus
+
 from users.models import DayOff, Master, MasterStatus, WorkingSchedule
 from users.permissions import IsMaster
 from users.serializers import (
@@ -25,6 +22,7 @@ from users.serializers import (
     SetPasswordSerializer,
     UserProfileSerializer,
     UserSerializer,
+    VerifyEmailSerializer,
     WorkingScheduleSerializer,
 )
 from users.services.auth_service import UserAuthService
@@ -172,7 +170,13 @@ class VerifyEmailView(APIView):
     authentication_classes = ()
     permission_classes = ()
 
-    def get(self, request, uidb64, token):
+    def post(self, request):
+        serializer = VerifyEmailSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        uidb64 = serializer.validated_data["id"]
+        token = serializer.validated_data["token"]
+
         UserAuthService.verify_email(uidb64, token)
 
         return Response(

@@ -21,9 +21,7 @@ class UserRegistrationService:
         )
         uid = urlsafe_base64_encode(force_bytes(user.pk))
         token = default_token_generator.make_token(user)
-        verification_url = (
-            f"{settings.BACKEND_URL}/api/users/verify-email/{uid}/{token}/"
-        )
+        verification_url = f"https://extymandriy.github.io/Verify?token={token}&id={uid}"
 
         EmailService.send_email(
             recipient=user.email,
