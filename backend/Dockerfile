@@ -7,8 +7,14 @@ WORKDIR /app
 
 COPY requirements.txt .
 
-RUN pip install -r requirements.txt
+RUN python -m pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+RUN useradd -u10100 -m appuser
+
+COPY --chown=appuser:appuser . .
+
+USER appuser
+
+EXPOSE 8000
 
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
