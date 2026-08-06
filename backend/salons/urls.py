@@ -1,6 +1,10 @@
 from django.urls import path
 
-from .views import SalonDetailView, SalonListCreateView, SalonListView
+from .views import (
+    SalonDetailView,
+    SalonListCreateView,
+    SalonListView
+)
 
 app_name = "salons"
 

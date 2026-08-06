@@ -33,7 +33,7 @@ class Promotion(models.Model):
             ),
         ]
 
-    def clean(self):
+    def clean(self) -> None:
         super().clean()
         if (
                 self.start_date
@@ -44,11 +44,11 @@ class Promotion(models.Model):
                 {"end_date": "The end date must be later than the start date."}
             )
 
-    def save(self, *args, **kwargs):
+    def save(self, *args, **kwargs) -> None:
         self.full_clean()
         super().save(*args, **kwargs)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return (
             f"{self.name} ({self.discount_percent}%) - "
             f"{self.salon.name} "

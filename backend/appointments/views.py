@@ -46,19 +46,20 @@ class ClientAppointmentListView(generics.ListAPIView):
     List of reservations for the currently authenticated client.
     Supports:
       - filter by status:  ?status=confirmed
-      - sort:         ?ordering=appointment_date  (або -appointment_date)
-      - pagination:          ?page=2
+      - sort:         ?ordering=start  (or -start)
+      - pagination:   ?page=2
     """
 
     serializer_class = AppointmentSerializer
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_fields = ["status"]
-    ordering_fields = ["appointment_date", "start_time", "created_at"]
-    ordering = ["-appointment_date"]  # default sorting: newest first
+    # Updated ordering fields to reflect the model's new 'start' field
+    ordering_fields = ["start", "created_at"]
+    ordering = ["-start"]  # Default sorting: newest first
 
     def get_queryset(self) -> QuerySet[Appointment]:
-        # show only the bookings of the client who is currently logged in
+        # Filter appointments to display only those belonging to the logged-in client
         return Appointment.objects.filter(client=self.request.user)
 
 
@@ -66,8 +67,8 @@ class RescheduleAppointmentView(generics.UpdateAPIView):
     """
     PATCH /api/appointments/<id>/reschedule/
 
-    Moves an existing customer reservation to a new date/time.
-    Request body: {"appointment_date": "2026-08-01", "start_time": "14:00", "end_time": "15:00"}
+    Moves an existing customer reservation to a new datetime interval.
+    Request body: {"start": "2026-08-01T14:00:00Z", "end": "2026-08-01T15:00:00Z"}
     """
 
     serializer_class = RescheduleSerializer
@@ -75,10 +76,11 @@ class RescheduleAppointmentView(generics.UpdateAPIView):
     http_method_names = ["patch"]
 
     def get_queryset(self) -> QuerySet[Appointment]:
-        # customer can only transfer their own bookings
+        # Restrict rescheduling strictly to the user's own appointments
         return Appointment.objects.filter(client=self.request.user)
 
     def perform_update(self, serializer) -> None:
+        # Prevent rescheduling if the appointment is already completed or canceled
         appointment = self.get_object()
         if appointment.status in ["cancelled", "completed"]:
             raise serializers.ValidationError(
@@ -100,10 +102,11 @@ class CancelAppointmentView(generics.UpdateAPIView):
     http_method_names = ["patch"]
 
     def get_queryset(self) -> QuerySet[Appointment]:
-        # a customer can only cancel their own bookings
+        # Restrict cancellation strictly to the user's own appointments
         return Appointment.objects.filter(client=self.request.user)
 
     def perform_update(self, serializer) -> None:
+        # Prevent cancellation for past or already canceled appointments
         appointment = self.get_object()
         if appointment.status in ["cancelled", "completed"]:
             raise serializers.ValidationError(
@@ -119,16 +122,16 @@ class AvailableSlotsView(APIView):
 
     Returns a list of available time slots for booking, grouped by date.
     Required query params:
-      - salon     — salon id (to get working hours)
-      - master    — master id (to get already booked intervals)
-      - service   — service id (to get slot duration)
+      - salon     — salon id (to fetch daily working hours)
+      - master    — master id (to query busy time ranges)
+      - service   — service id (to compute required slot duration)
       - date_from — start date, format YYYY-MM-DD
-      - date_to   — end date, format YYYY-MM-DD (inclusive; if omitted, same as date_from)
+      - date_to   — end date, format YYYY-MM-DD (inclusive; defaults to date_from)
 
     Response:
       {
         "2026-08-01": [{"start": "10:00", "end": "10:45"}, ...],
-        "2026-08-02": []   ← empty list if the salon is closed that day
+        "2026-08-02": []   ← empty list if closed or fully booked
       }
     """
 
@@ -171,7 +174,7 @@ class AvailableSlotsView(APIView):
         duration = timedelta(minutes=service.duration_minutes)
         step = timedelta(minutes=15)
 
-        # preload the weekly schedule for this salon once, keyed by weekday number
+        # Preload salon opening hours mapped by weekday integer (0=Monday, 6=Sunday)
         # noinspection PyUnresolvedReferences
         working_hours_by_weekday = {wh.weekday: wh for wh in salon.working_hours.all()}
 
@@ -179,48 +182,52 @@ class AvailableSlotsView(APIView):
         current_date = date_from
 
         while current_date <= date_to:
-            weekday = (
-                current_date.weekday()
-            )  # Monday=0 ... Sunday=6, matches our choices
+            weekday = current_date.weekday()
             schedule = working_hours_by_weekday.get(weekday)
 
-            # if there is no schedule entry for this weekday, or the salon
-            # is marked as closed, there are simply no slots that day
+            # Skip calculation if the salon has no schedule or is marked closed for this weekday
             # noinspection PyUnresolvedReferences
             if schedule is None or schedule.is_closed:
                 result[current_date.isoformat()] = []
                 current_date += timedelta(days=1)
                 continue
 
-            # already booked intervals for this master on this date (canceled ones are excluded)
+            # Fetch existing non-canceled appointments for the target master on this date
             busy_appointments = (
                 Appointment.objects.filter(
-                    master_id=master_id, appointment_date=current_date
+                    master_id=master_id,
+                    start__date=current_date,
                 )
                 .exclude(status="cancelled")
-                .order_by("start_time")
+                .order_by("start")
             )
 
+            # Build list of occupied (start_datetime, end_datetime) tuples
             busy_intervals = [
-                (
-                    datetime.combine(current_date, a.start_time),
-                    datetime.combine(current_date, a.end_time),
-                )
+                (a.start, a.end)
                 for a in busy_appointments
             ]
 
+            # Construct datetime boundaries for the master's working day
             # noinspection PyUnresolvedReferences
             work_start = datetime.combine(current_date, schedule.opening_time)
             # noinspection PyUnresolvedReferences
             work_end = datetime.combine(current_date, schedule.closing_time)
 
+            # Make work boundaries timezone-aware if the current timezone setting is active
+            if timezone.is_aware(timezone.now()):
+                tz = timezone.get_current_timezone()
+                work_start = timezone.make_aware(work_start, tz)
+                work_end = timezone.make_aware(work_end, tz)
+
             slots = []
             cursor = work_start
 
+            # Iterate over time slots in fixed step increments
             while cursor + duration <= work_end:
                 slot_end = cursor + duration
 
-                # check whether this slot overlaps with any busy interval
+                # Check if proposed slot overlaps with any reserved appointment interval
                 overlaps = any(
                     cursor < busy_end and slot_end > busy_start
                     for busy_start, busy_end in busy_intervals
@@ -234,8 +241,6 @@ class AvailableSlotsView(APIView):
                         }
                     )
 
-                # always move forward by a fixed step, regardless of whether
-                # the slot was free or not
                 cursor += step
 
             result[current_date.isoformat()] = slots
@@ -245,6 +250,7 @@ class AvailableSlotsView(APIView):
 
 
 class StatusTransitionConflict(APIException):
+    # Custom API exception to handle invalid state machine status changes with 409 Conflict
     status_code = http_status.HTTP_409_CONFLICT
     default_detail = "Недопустимий перехід статусу."
     default_code = "status_transition_conflict"
@@ -254,15 +260,16 @@ class MasterUpdateAppointmentStatusView(generics.UpdateAPIView):
     """
     PATCH /api/appointments/<id>/status/
 
-    Allows a master to update the status of their booking.
+    Allows a master to update the status of their assigned appointment.
     Request body: {"status": "confirmed"}
-    For status "canceled", cancellation_reason is required.
+    If status is "canceled", cancellation_reason is required.
 
     Allowed transitions:
     pending -> confirmed, canceled
-    confirmed -> completed, canceled
-    completed -> (nothing, status final)
-    canceled -> (nothing, status final)
+    confirmed -> in_progress, canceled
+    in_progress -> completed
+    completed -> (none, final status)
+    canceled -> (none, final status)
     """
 
     ALLOWED_TRANSITIONS = {
@@ -278,7 +285,7 @@ class MasterUpdateAppointmentStatusView(generics.UpdateAPIView):
     http_method_names = ["patch"]
 
     def get_queryset(self) -> QuerySet[Appointment]:
-        # master can update only appointments assigned to them
+        # Master can update status only for their assigned appointments
         return Appointment.objects.filter(master__user=self.request.user)
 
     def perform_update(self, serializer) -> None:
@@ -299,6 +306,7 @@ class MasterUpdateAppointmentStatusView(generics.UpdateAPIView):
         else:
             serializer.save()
 
+        # Trigger background email notification task to inform client of status change
         send_email_task.delay(
             recipient=appointment.client.email,
             subject="Оновлення статусу вашого запису",
@@ -308,8 +316,8 @@ class MasterUpdateAppointmentStatusView(generics.UpdateAPIView):
                 "salon_name": appointment.salon.name,
                 "master_name": appointment.master.user.get_full_name() or appointment.master.user.email,
                 "service_name": appointment.service.name,
-                "booking_date": appointment.appointment_date.isoformat(),
-                "booking_time": appointment.start_time.strftime("%H:%M"),
+                "booking_date": appointment.start.date().isoformat(),
+                "booking_time": appointment.start.time().strftime("%H:%M"),
                 "notification_message": "Статус вашого запису оновлено на '%s'." % appointment.get_status_display(),
             },
         )
@@ -323,7 +331,7 @@ class MasterAppointmentListView(generics.ListAPIView):
     the currently authenticated master.
 
     Filters: ?appointment_date=2026-08-01&status=confirmed&client=<email substring>&service=<name substring>
-    Sorting: ?ordering=appointment_date | created_at | status | service__price (add "-" for descending)
+    Sorting: ?ordering=start | created_at | status | service__price (prefix with '-' for descending)
     Pagination: ?page=2
     """
 
@@ -331,24 +339,24 @@ class MasterAppointmentListView(generics.ListAPIView):
     permission_classes = [IsMaster]
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_class = MasterAppointmentFilter
-    ordering_fields = ["appointment_date", "created_at", "status", "service__price"]
-    ordering = ["-appointment_date"]
+    ordering_fields = ["start", "created_at", "status", "service__price"]
+    ordering = ["-start"]
 
     def get_queryset(self) -> QuerySet[Appointment]:
+        # Retrieve active appointments assigned to the master and select related FKs for optimization
         return Appointment.objects.filter(
             master__user=self.request.user,
             status__in=["pending", "confirmed", "in_progress"],
         ).select_related("client", "service", "salon")
 
     def filter_queryset(self, queryset) -> QuerySet[Appointment]:
-        # validate filter params explicitly, so invalid values return 400
-        # instead of being silently ignored
+        # Validate filter parameters explicitly to return HTTP 400 Bad Request on invalid input
         filterset = self.filterset_class(self.request.query_params, queryset=queryset)
         if not filterset.is_valid():
             raise serializers.ValidationError(filterset.errors)
         queryset = filterset.qs
 
-        # validate the "ordering" param against the allowed fields
+        # Validate ordering query param against allowed fields
         ordering_param = self.request.query_params.get("ordering")
         if ordering_param:
             requested_fields = [f.lstrip("-") for f in ordering_param.split(",")]
@@ -366,14 +374,14 @@ class MasterAppointmentDetailView(generics.RetrieveAPIView):
     GET /api/appointments/master/<id>/
 
     Returns detailed information about a specific appointment assigned to
-    the currently authenticated master (client details, service details,
-    salon details, notes, timestamps).
+    the currently authenticated master.
     """
 
     serializer_class = MasterAppointmentDetailSerializer
     permission_classes = [IsMaster]
 
     def get_queryset(self) -> QuerySet[Appointment]:
+        # Ensure masters can only retrieve details of their own appointments
         return Appointment.objects.filter(master__user=self.request.user).select_related(
             "client", "service", "salon"
         )
@@ -383,11 +391,11 @@ class MasterAppointmentHistoryView(generics.ListAPIView):
     """
     GET /api/appointments/master/history/
 
-    Returns completed and cancelled appointments assigned to the currently
+    Returns completed and canceled appointments assigned to the currently
     authenticated master.
 
     Filters: ?date_from=2026-07-01&date_to=2026-07-31&status=completed&client=<email substring>&service=<name substring>
-    Sorting: ?ordering=appointment_date | created_at | status | service__price (add "-" for descending)
+    Sorting: ?ordering=start | created_at | status | service__price (prefix with '-' for descending)
     Pagination: ?page=2
     """
 
@@ -395,24 +403,23 @@ class MasterAppointmentHistoryView(generics.ListAPIView):
     permission_classes = [IsMaster]
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_class = MasterAppointmentHistoryFilter
-    ordering_fields = ["appointment_date", "created_at", "status", "service__price"]
-    ordering = ["-appointment_date"]
+    ordering_fields = ["start", "created_at", "status", "service__price"]
+    ordering = ["-start"]
 
     def get_queryset(self) -> QuerySet[Appointment]:
+        # Fetch completed or canceled historical records for the logged-in master
         return Appointment.objects.filter(
             master__user=self.request.user,
             status__in=["completed", "cancelled"],
         ).select_related("client", "service")
 
     def filter_queryset(self, queryset) -> QuerySet[Appointment]:
-        # validate filter params explicitly, so invalid values return 400
-        # instead of being silently ignored
+        # Explicit validation for filter and ordering query parameters
         filterset = self.filterset_class(self.request.query_params, queryset=queryset)
         if not filterset.is_valid():
             raise serializers.ValidationError(filterset.errors)
         queryset = filterset.qs
 
-        # validate the "ordering" param against the allowed fields
         ordering_param = self.request.query_params.get("ordering")
         if ordering_param:
             requested_fields = [f.lstrip("-") for f in ordering_param.split(",")]

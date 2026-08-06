@@ -1,12 +1,27 @@
 from django.conf import settings
+
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
+
 from django.db import IntegrityError
-from django.utils.encoding import force_bytes, force_str
-from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
+
+from django.utils.encoding import (
+    force_bytes,
+    force_str
+)
+from django.utils.http import (
+    urlsafe_base64_decode,
+    urlsafe_base64_encode
+)
+
 from google.auth.transport.requests import Request as GoogleRequest
 from google.oauth2 import id_token as google_id_token
-from rest_framework.exceptions import AuthenticationFailed, ValidationError
+
+from rest_framework.exceptions import (
+    AuthenticationFailed,
+    ValidationError
+)
+
 from services.email_service import EmailService
 
 User = get_user_model()
@@ -14,7 +29,7 @@ User = get_user_model()
 
 class UserRegistrationService:
     @staticmethod
-    def register(validated_data):
+    def register(validated_data) -> User:
         user = User.objects.create_user(
             **validated_data,
             is_active=False,

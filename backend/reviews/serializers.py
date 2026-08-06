@@ -35,7 +35,7 @@ class MasterReviewSerializer(serializers.ModelSerializer):
     )
 
     appointment_date = serializers.DateField(
-        source="appointment.appointment_date",
+        source="appointment.start.date",
         read_only=True,
     )
 

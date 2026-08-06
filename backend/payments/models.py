@@ -40,7 +40,7 @@ class Payment(models.Model):
     class Meta:
         ordering = ["-payment_date"]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return (
             f"Appointment #{self.appointment_id} - "
             f"{self.amount} {self.currency} "

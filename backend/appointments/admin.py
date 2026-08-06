@@ -11,10 +11,9 @@ class AppointmentAdmin(admin.ModelAdmin):
         "master",
         "salon",
         "service",
-        "appointment_date",
-        "start_time",
-        "end_time",
+        "start",
+        "end",
         "status",
     )
-    list_filter = ("status", "appointment_date")
+    list_filter = ("status", "start")
     search_fields = ("client__email", "master__user__email")

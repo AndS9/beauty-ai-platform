@@ -1,6 +1,9 @@
 from rest_framework import serializers
 
-from .models import Salon, SalonWorkingHours
+from .models import (
+    Salon,
+    SalonWorkingHours
+)
 
 
 class SalonSerializer(serializers.ModelSerializer):

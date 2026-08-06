@@ -1,5 +1,9 @@
 from django.conf import settings
-from django.core.validators import MaxValueValidator, MinValueValidator
+from django.core.validators import (
+    MaxValueValidator,
+    MinValueValidator
+)
+
 from django.db import models
 
 
@@ -69,5 +73,5 @@ class SalonReview(models.Model):
             ),
         )
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"Salon review #{self.pk} — {self.rating}/5 for {self.salon}"

@@ -1,3 +1,4 @@
+from django.db.models import QuerySet
 from django.utils import timezone
 
 from rest_framework import viewsets
@@ -44,7 +45,7 @@ class PromotionViewSet(viewsets.ModelViewSet):
     serializer_class = PromotionSerializer
     permission_classes = (IsAdminOrReadOnlyAll,)
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet:
         queryset = Promotion.objects.select_related("salon")
 
         salon_id = self.request.query_params.get("salon_id")

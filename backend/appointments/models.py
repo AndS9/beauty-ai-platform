@@ -1,8 +1,5 @@
-from datetime import datetime
-
 from django.conf import settings
 from django.db import models
-from django.utils import timezone
 
 
 class Appointment(models.Model):
@@ -38,17 +35,8 @@ class Appointment(models.Model):
         db_column="service_id",
     )
     promo_id = models.IntegerField(null=True, blank=True)
-    appointment_date = models.DateField() # Прохання видалити це поле за можливістю і переписати вже реалізовану логіку за допомогою start і end
-    start_time = models.TimeField()  # Прохання видалити це поле за можливістю і переписати вже реалізовану логіку за допомогою start і end
-    end_time = models.TimeField()  # Прохання видалити це поле за можливістю і переписати вже реалізовану логіку за допомогою start і end
-    start = models.DateTimeField(
-        null=True,
-        blank=True,
-    )
-    end = models.DateTimeField(
-        null=True,
-        blank=True,
-    )
+    start = models.DateTimeField()
+    end = models.DateTimeField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
     cancellation_reason = models.CharField(max_length=255, null=True, blank=True)
     notes = models.TextField(null=True, blank=True)
@@ -58,37 +46,15 @@ class Appointment(models.Model):
 
     class Meta:
         db_table = "appointments"
-        constraints = [  # Прохання видалити це поле за можливістю і переписати вже реалізовану логіку за допомогою start і end
+        constraints = [
             models.CheckConstraint(
-                condition=models.Q(end_time__gt=models.F("start_time")),
+                condition=models.Q(end__gt=models.F("start")),
                 name="appointments_check",
             ),
         ]
 
-    # class Meta:
-    #     db_table = "appointments"
-    #     constraints = (
-    #         models.CheckConstraint(
-    #             condition=models.Q(end__gt=models.F("start")),
-    #             name="appointments_check",
-    #         ),
-    #     )
-
-    # def __str__(self) -> str:
-    #     return f"Appointment #{self.id} — ({self.start} to {self.end})"
-
-    def __str__(self) -> str:  # Прохання видалити цей метод за можливістю і переписати вже реалізовану логіку за допомогою start і end
-        return f"Appointment #{self.id} — {self.appointment_date} {self.start_time}"
-
-    def save(self, *args, **kwargs):  # Прохання видалити цю функцію за можливістю і переписати вже реалізовану логіку за допомогою start і end
-        self.start = timezone.make_aware(
-            datetime.combine(self.appointment_date, self.start_time)
-        )
-        self.end = timezone.make_aware(
-            datetime.combine(self.appointment_date, self.end_time)
-        )
-
-        super().save(*args, **kwargs)
+    def __str__(self) -> str:
+        return f"Appointment #{self.id} — ({self.start} to {self.end})"
 
 
 class AppointmentReminder(models.Model):

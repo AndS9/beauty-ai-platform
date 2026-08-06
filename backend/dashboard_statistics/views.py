@@ -9,7 +9,8 @@ from dashboard_statistics.services import StatisticsService
 class MasterStatisticsView(APIView):
     permission_classes = (IsMaster,)
 
-    def get(self, request):
+    # noinspection PyMethodMayBeStatic
+    def get(self, request) -> Response:
         data = StatisticsService.get_master_statistics(master=request.user.master)
         serializer = StatisticsSerializer(data)
         return Response(serializer.data)

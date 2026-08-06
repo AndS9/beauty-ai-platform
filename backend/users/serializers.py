@@ -1,20 +1,38 @@
-from typing import ClassVar
+from typing import (
+    Any,
+    ClassVar
+)
 
 from appointments.models import Appointment
 from beauty_service.models import Service
+
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import AbstractBaseUser
+
 from django.core.exceptions import ValidationError as DjangoValidationError
+
 from phonenumber_field.serializerfields import PhoneNumberField
 from rest_framework import serializers
+
 from salons.models import Salon
 
-from users.models import DayOff, Master, WorkingSchedule
+from users.models import (
+    DayOff,
+    Master,
+    WorkingSchedule,
+)
 from users.services.auth_service import UserRegistrationService
 
 
+User = get_user_model()
+
+
+# USER MANAGEMENT SERIALIZERS
 class UserSerializer(serializers.ModelSerializer):
+    """Serializer for creating and updating basic user data."""
+
     class Meta:
-        model = get_user_model()
+        model = User
         fields = (
             "id",
             "email",
@@ -26,15 +44,16 @@ class UserSerializer(serializers.ModelSerializer):
             "phone",
         )
         read_only_fields = ("is_staff", "is_active")
-        extra_kwargs: ClassVar[dict] = {
+        extra_kwargs: ClassVar[dict[str, Any]] = {
             "password": {"write_only": True, "min_length": 5}
         }
 
-    def create(self, validated_data):
+    def create(self, validated_data: dict[str, Any]) -> Any:
         return UserRegistrationService.register(validated_data)
 
-    def update(self, instance, validated_data):
-        """Update a user, set the password correctly and return it"""
+    # noinspection PyUnresolvedReferences
+    def update(self, instance: Any, validated_data: dict[str, Any]) -> Any:
+        """Update a user, securely set a new password if provided, and return it."""
         password = validated_data.pop("password", None)
         user = super().update(instance, validated_data)
         if password:
@@ -45,8 +64,10 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
+    """Serializer for retrieving detailed user profile information (Read-Only)."""
+
     class Meta:
-        model = get_user_model()
+        model = User
         fields = (
             "id",
             "first_name",
@@ -73,7 +94,10 @@ class UserProfileSerializer(serializers.ModelSerializer):
         )
 
 
+# HELPER / NESTED SERIALIZERS
 class AssignedSalonsSerializer(serializers.ModelSerializer):
+    """Nested serializer for brief salon details."""
+
     class Meta:
         model = Salon
         fields = (
@@ -83,6 +107,8 @@ class AssignedSalonsSerializer(serializers.ModelSerializer):
 
 
 class ServiceSerializer(serializers.ModelSerializer):
+    """Nested serializer for services provided by a master."""
+
     class Meta:
         model = Service
         fields = (
@@ -91,7 +117,10 @@ class ServiceSerializer(serializers.ModelSerializer):
         )
 
 
+# MASTER SCHEDULE & DAY OFF SERIALIZERS
 class WorkingScheduleSerializer(serializers.ModelSerializer):
+    """Serializer for managing a master's working schedule by days of the week."""
+
     class Meta:
         model = WorkingSchedule
         fields = (
@@ -103,7 +132,7 @@ class WorkingScheduleSerializer(serializers.ModelSerializer):
         )
         read_only_fields = ("id",)
 
-    def validate(self, attrs):
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
         instance = self.instance or WorkingSchedule()
 
         for attr, value in attrs.items():
@@ -121,7 +150,7 @@ class WorkingScheduleSerializer(serializers.ModelSerializer):
 
         return attrs
 
-    def create(self, validated_data):
+    def create(self, validated_data: dict[str, Any]) -> WorkingSchedule:
         if not validated_data["is_working_day"]:
             WorkingSchedule.objects.filter(
                 master=validated_data["master"],
@@ -130,7 +159,9 @@ class WorkingScheduleSerializer(serializers.ModelSerializer):
 
         return super().create(validated_data)
 
-    def update(self, instance, validated_data):
+    def update(
+        self, instance: WorkingSchedule, validated_data: dict[str, Any]
+    ) -> WorkingSchedule:
         if not validated_data.get("is_working_day", instance.is_working_day):
             WorkingSchedule.objects.filter(
                 master=validated_data.get("master", instance.master),
@@ -141,6 +172,8 @@ class WorkingScheduleSerializer(serializers.ModelSerializer):
 
 
 class DayOffSerializer(serializers.ModelSerializer):
+    """Serializer for creating and validating a master's days off / vacations."""
+
     class Meta:
         model = DayOff
         fields = (
@@ -157,7 +190,8 @@ class DayOffSerializer(serializers.ModelSerializer):
             "updated_at",
         )
 
-    def validate(self, attrs):
+    # noinspection PyUnresolvedReferences
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
         master = self.context["request"].user.master
         instance = self.instance
 
@@ -192,9 +226,10 @@ class DayOffSerializer(serializers.ModelSerializer):
                 "This period overlaps with another day off."
             )
 
+        # Check for confirmed appointments falling within the day off period using start field
         appointments = Appointment.objects.filter(
             master=master,
-            appointment_date__range=(start_date, end_date),
+            start__date__range=(start_date, end_date),
             status="confirmed",
         )
 
@@ -206,7 +241,10 @@ class DayOffSerializer(serializers.ModelSerializer):
         return attrs
 
 
+# MASTER PROFILE SERIALIZERS
 class MasterProfileSerializer(serializers.ModelSerializer):
+    """Serializer for public and personal master profiles with nested relations."""
+
     first_name = serializers.CharField(source="user.first_name")
     last_name = serializers.CharField(source="user.last_name")
     email = serializers.EmailField(source="user.email")
@@ -253,7 +291,7 @@ class MasterProfileSerializer(serializers.ModelSerializer):
             "working_schedule",
         )
 
-    def update(self, instance, validated_data):
+    def update(self, instance: Master, validated_data: dict[str, Any]) -> Master:
         user_data = validated_data.pop("user", {})
 
         for attr, value in user_data.items():
@@ -263,34 +301,41 @@ class MasterProfileSerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
 
 
+# AUTHENTICATION & PASSWORD MANAGEMENT
 class ChangePasswordSerializer(serializers.Serializer):
+    """Serializer for handling password changes by authenticated users."""
+
     old_password = serializers.CharField(write_only=True)
     new_password = serializers.CharField(write_only=True)
 
-    def validate_old_password(self, value):
-        user = self.context["request"].user
+    def validate_old_password(self, value: str) -> str:
+        user: AbstractBaseUser = self.context["request"].user
 
         if not user.check_password(value):
             raise serializers.ValidationError("Incorrect password.")
 
         return value
 
-    def save(self):
-        user = self.context["request"].user
+    def save(self, **kwargs: Any) -> AbstractBaseUser:
+        user: AbstractBaseUser = self.context["request"].user
         user.set_password(self.validated_data["new_password"])
         user.save()
         return user
 
 
 class SetPasswordSerializer(serializers.Serializer):
+    """Serializer for setting a new password (e.g., after a password reset)."""
+
     new_password = serializers.CharField(write_only=True)
 
-    def save(self):
-        user = self.context["request"].user
+    def save(self, **kwargs: Any) -> AbstractBaseUser:
+        user: AbstractBaseUser = self.context["request"].user
         user.set_password(self.validated_data["new_password"])
         user.save()
         return user
 
 
 class GoogleLoginSerializer(serializers.Serializer):
+    """Serializer for accepting Google ID tokens during OAuth2 authentication."""
+
     id_token = serializers.CharField()

@@ -1,11 +1,20 @@
-from django.db.models import Avg, Count, Q
+from typing import Any
+
+from django.db.models import (
+    Avg,
+    Count,
+    Q, QuerySet
+)
 from rest_framework import generics
 from rest_framework.filters import OrderingFilter
 from users.models import MasterStatus
 
 from .models import Salon, SalonStatus
 from .permissions import IsAdminOrReadOnlyAll
-from .serializers import SalonListSerializer, SalonSerializer
+from .serializers import (
+    SalonListSerializer,
+    SalonSerializer
+)
 
 
 class SalonListCreateView(generics.ListCreateAPIView):
@@ -42,7 +51,7 @@ class SalonOrderingFilter(OrderingFilter):
         "popularity": "completed_services",
     }
 
-    def get_ordering(self, request, queryset, view):
+    def get_ordering(self, request, queryset, view) -> list[Any]:
         ordering = super().get_ordering(request, queryset, view)
 
         if not ordering:
@@ -90,7 +99,7 @@ class SalonListView(generics.ListAPIView):
 
     ordering = ("-average_rating",)
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[Salon, Salon]:
         return (
             Salon.objects.filter(
                 masters__account_status=MasterStatus.ACTIVE,

@@ -13,19 +13,42 @@ class AppointmentSerializer(serializers.ModelSerializer):
             "salon",
             "service",
             "promo_id",
-            "appointment_date",
-            "start_time",
-            "end_time",
+            "start",
+            "end",
             "status",
             "created_at",
         ]
         read_only_fields = ["id", "client", "created_at"]
 
+    def validate(self, attrs) -> dict:
+        # Validate that the appointment end time is strictly after the start time
+        start = attrs.get("start")
+        end = attrs.get("end")
+
+        if start and end and end <= start:
+            raise serializers.ValidationError(
+                {"end": "Час завершення має бути пізнішим за час початку."}
+            )
+
+        return super().validate(attrs)
+
 
 class RescheduleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Appointment
-        fields = ["appointment_date", "start_time", "end_time"]
+        fields = ["start", "end"]
+
+    def validate(self, attrs) -> dict:
+        # Validate start and end datetimes during rescheduling, accounting for partial updates
+        start = attrs.get("start", getattr(self.instance, "start", None))
+        end = attrs.get("end", getattr(self.instance, "end", None))
+
+        if start and end and end <= start:
+            raise serializers.ValidationError(
+                {"end": "Час завершення має бути пізнішим за час початку."}
+            )
+
+        return super().validate(attrs)
 
 
 class CancelSerializer(serializers.ModelSerializer):
@@ -40,6 +63,7 @@ class MasterStatusUpdateSerializer(serializers.ModelSerializer):
         fields = ["status", "cancellation_reason"]
 
     def validate(self, attrs) -> dict:
+        # Require a reason if the appointment status is set to 'canceled'
         status = attrs.get("status")
         cancellation_reason = attrs.get("cancellation_reason")
 
@@ -52,6 +76,7 @@ class MasterStatusUpdateSerializer(serializers.ModelSerializer):
 
 
 class MasterAppointmentListSerializer(serializers.ModelSerializer):
+    # Retrieve related model details to simplify output data for list views
     client_name = serializers.SerializerMethodField()
     service_name = serializers.CharField(source="service.name", read_only=True)
     duration_minutes = serializers.IntegerField(source="service.duration_minutes", read_only=True)
@@ -62,8 +87,8 @@ class MasterAppointmentListSerializer(serializers.ModelSerializer):
         model = Appointment
         fields = [
             "id",
-            "appointment_date",
-            "start_time",
+            "start",
+            "end",
             "client_name",
             "service_name",
             "status",
@@ -75,10 +100,12 @@ class MasterAppointmentListSerializer(serializers.ModelSerializer):
 
     # noinspection PyMethodMayBeStatic
     def get_client_name(self, obj) -> str:
+        # Return full name if available, otherwise fallback to email address
         return obj.client.get_full_name() or obj.client.email
 
 
 class MasterAppointmentDetailSerializer(serializers.ModelSerializer):
+    # Expand detailed relational information for single appointment view
     client_id = serializers.IntegerField(source="client.id", read_only=True)
     client_name = serializers.SerializerMethodField()
     client_phone = serializers.CharField(source="client.phone", read_only=True)
@@ -97,8 +124,8 @@ class MasterAppointmentDetailSerializer(serializers.ModelSerializer):
         model = Appointment
         fields = [
             "id",
-            "appointment_date",
-            "start_time",
+            "start",
+            "end",
             "status",
             "client_id",
             "client_name",
@@ -122,6 +149,7 @@ class MasterAppointmentDetailSerializer(serializers.ModelSerializer):
 
 
 class MasterAppointmentHistorySerializer(serializers.ModelSerializer):
+    # Formats read-only historical records of completed or past appointments
     client_name = serializers.SerializerMethodField()
     service_name = serializers.CharField(source="service.name", read_only=True)
     duration_minutes = serializers.IntegerField(source="service.duration_minutes", read_only=True)
@@ -133,8 +161,8 @@ class MasterAppointmentHistorySerializer(serializers.ModelSerializer):
             "id",
             "client_name",
             "service_name",
-            "appointment_date",
-            "start_time",
+            "start",
+            "end",
             "status",
             "total_price",
             "duration_minutes",

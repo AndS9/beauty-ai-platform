@@ -44,7 +44,7 @@ class ReferralEvent(models.Model):
             models.Index(fields=["salon", "created_at"]),
         ]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return (
             f"{self.event_type} | "
             f"{self.salon.name} | "

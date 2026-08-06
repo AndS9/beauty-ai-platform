@@ -1,9 +1,17 @@
 from django.conf import settings
+
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
+
 from django.db import models
-from django.db.models import Avg
+from django.db.models import (
+    Avg,
+    QuerySet
+)
+
+from django.utils import timezone
 from django.utils.translation import gettext as _
+
 from phonenumber_field.modelfields import PhoneNumberField
 
 from .managers import UserManager
@@ -75,15 +83,26 @@ class User(AbstractUser):
     )
 
     @property
-    def is_master(self):
+    def is_master(self) -> bool:
+        """Check if user has an associated master profile."""
         return hasattr(self, "master")
+
+    def clean(self) -> None:
+        """Validate user profile data."""
+        super().clean()
+
+        # Prevent setting future birth dates
+        if self.birth_date and self.birth_date > timezone.now().date():
+            raise ValidationError(
+                {"birth_date": ["Birth date cannot be in the future."]}
+            )
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ()
 
     objects = UserManager()
 
-    def __str__(self):
+    def __str__(self) -> str:
         return (
             f"{self.get_full_name()} ({self.email})"
             if self.get_full_name()
@@ -133,22 +152,27 @@ class Master(models.Model):
     )
 
     @property
-    def active_services(self):
+    def active_services(self) -> QuerySet:
+        """Return active services offered by the master."""
         return self.services.filter(is_active=True)
 
     @property
     def average_rating(self) -> float:
-        return self.reviews_received.aggregate(average=Avg("rating"))["average"]
+        """Calculate average rating, returning 0.0 if no reviews exist."""
+        avg = self.reviews_received.aggregate(average=Avg("rating"))["average"]
+        return round(avg, 2) if avg is not None else 0.0
 
     @property
     def total_reviews(self) -> int:
+        """Return total number of reviews received by the master."""
         return self.reviews_received.count()
 
     @property
-    def is_independent(self):
+    def is_independent(self) -> bool:
+        """Check if master is independent (not linked to any salon)."""
         return not self.salons.exists()
 
-    def __str__(self):
+    def __str__(self) -> str:
         name = self.user.get_full_name() or self.user.email
         return f"{name} — {self.specialization}" if self.specialization else name
 
@@ -164,6 +188,8 @@ class WeekDay(models.IntegerChoices):
 
 
 class WorkingSchedule(models.Model):
+    """Represents a master's recurring weekly working schedule for a specific day of the week."""
+
     master = models.ForeignKey(
         "Master",
         on_delete=models.CASCADE,
@@ -182,9 +208,11 @@ class WorkingSchedule(models.Model):
     )
     is_working_day = models.BooleanField(default=True)
 
-    def clean(self):
+    def clean(self) -> None:
+        """Validate working schedule consistency and prevent overlapping shifts."""
         super().clean()
 
+        # Block 1: Handle days off (ensure no working hours are set when is_working_day is False)
         if not self.is_working_day:
             if self.start_time or self.end_time:
                 raise ValidationError(
@@ -192,6 +220,7 @@ class WorkingSchedule(models.Model):
                 )
             return
 
+        # Block 2: Ensure start_time and end_time are provided for active working days
         if self.start_time is None:
             raise ValidationError(
                 {
@@ -206,6 +235,7 @@ class WorkingSchedule(models.Model):
                 }
             )
 
+        # Block 3: Validate logical sequence of time (start time must precede end time)
         if self.start_time >= self.end_time:
             raise ValidationError(
                 {
@@ -214,6 +244,7 @@ class WorkingSchedule(models.Model):
                 }
             )
 
+        # Block 4: Check for time range overlaps with existing schedules for the same master & weekday
         overlapping = WorkingSchedule.objects.filter(
             master=self.master,
             weekday=self.weekday,
@@ -222,6 +253,7 @@ class WorkingSchedule(models.Model):
             end_time__gt=self.start_time,
         )
 
+        # Exclude the current instance if updating an existing record
         if self.pk:
             overlapping = overlapping.exclude(pk=self.pk)
 
@@ -237,7 +269,8 @@ class WorkingSchedule(models.Model):
     class Meta:
         ordering = ("weekday", "start_time")
 
-    def __str__(self):
+    def __str__(self) -> str:
+        """Return a human-readable representation of the working schedule."""
         if not self.is_working_day:
             return f"{self.master} - {self.get_weekday_display()} (Day off)"
 
@@ -249,6 +282,8 @@ class WorkingSchedule(models.Model):
 
 
 class DayOff(models.Model):
+    """Represents a master's vacation, sick leave, or personal day off range."""
+
     master = models.ForeignKey(
         Master,
         on_delete=models.CASCADE,
@@ -263,8 +298,21 @@ class DayOff(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    def clean(self) -> None:
+        """Validate that end_date is not earlier than start_date."""
+        super().clean()
+
+        if self.start_date and self.end_date and self.start_date > self.end_date:
+            raise ValidationError(
+                {"end_date": ["End date cannot be earlier than start date."]}
+            )
+
     class Meta:
         ordering = ("start_date",)
+
+    def __str__(self) -> str:
+        """Return string representation of the day off range."""
+        return f"{self.master} off: {self.start_date} to {self.end_date}"
 
 
 class MasterSalon(models.Model):
@@ -294,7 +342,7 @@ class MasterSalon(models.Model):
             ),
         )
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.master} @ {self.salon}"
 
 
@@ -318,3 +366,6 @@ class MasterService(models.Model):
                 name="unique_master_service",
             ),
         )
+
+    def __str__(self) -> str:
+        return f"{self.master} - {self.service}"
