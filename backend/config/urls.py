@@ -15,15 +15,27 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
+import re
+
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
+from django.core.management import call_command
 from django.urls import include, path
 from drf_spectacular.views import (
     SpectacularAPIView,
     SpectacularRedocView,
     SpectacularSwaggerView,
 )
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+
+class reset_db(APIView):
+    def post(self, request, *args, **kwargs):
+        call_command("flush", interactive=False)
+        return Response({"message": "Database reset successfully."}, status=200)
+
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -52,6 +64,7 @@ urlpatterns = [
         "api/dashboard-statistics/",
         include("dashboard_statistics.urls", namespace="dashboard_statistics"),
     ),
+    path("reset_db/", reset_db.as_view(), name="reset"),
 ]
 
 if settings.DEBUG:
