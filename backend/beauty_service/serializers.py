@@ -2,7 +2,7 @@ from rest_framework import serializers
 from salons.models import Salon
 from users.models import Master
 
-from .models import Services
+from .models import Service
 
 
 class SalonServiceSerializer(serializers.ModelSerializer):
@@ -14,6 +14,8 @@ class SalonServiceSerializer(serializers.ModelSerializer):
         )
 
 class MasterServicesSerializer(serializers.ModelSerializer):
+    first_name = serializers.CharField(source="user.first_name")
+    last_name = serializers.CharField(source="user.last_name")
     class Meta:
         model = Master
         fields = (
@@ -30,7 +32,7 @@ class ServicesSerializer(serializers.ModelSerializer):
     masters = MasterServicesSerializer(many=True, read_only=True)
 
     class Meta:
-        model = Services
+        model = Service
         fields = (
             "id",
             "name",

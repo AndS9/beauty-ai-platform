@@ -65,7 +65,7 @@ urlpatterns = [
         include("dashboard_statistics.urls", namespace="dashboard_statistics"),
     ),
     path("api/services/", include("beauty_service.urls", namespace="services")),
-    path("reset_db/", reset_db.as_view(), name="reset"),
+    path("api/reset_db/", reset_db.as_view(), name="reset"),
 ]
 
 if settings.DEBUG:
