@@ -12,7 +12,7 @@ class StatisticsService:
     def get_master_statistics(master: Master):
         today = timezone.localdate()
 
-        appointments = master.master_appointments.all()
+        appointments = master.appointments.all()
         total_appointments = appointments.count()
 
         # Replaced appointment_date__gt with start__date__gt
@@ -49,7 +49,7 @@ class StatisticsService:
                 or 0
         )
 
-        reviews = master.reviews_received.all()
+        reviews = master.appontments.review.all()
         total_reviews = reviews.count()
         average_rating = (
             reviews.aggregate(average=Avg("rating"))["average"]
