@@ -15,8 +15,6 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
-import re
-
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
@@ -29,13 +27,6 @@ from drf_spectacular.views import (
 )
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
-
-class reset_db(APIView):
-    def post(self, request, *args, **kwargs):
-        call_command("flush", interactive=False)
-        return Response({"message": "Database reset successfully."}, status=200)
-
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -53,7 +44,7 @@ urlpatterns = [
     ),
     path("api/appointments/", include("appointments.urls")),
     path("api/salons/", include("salons.urls", namespace="salons")),
-    path("api/reviews/", include("reviews.urls")),
+    path("api/", include("reviews.urls")),
     path("api/promotions/", include("promotions.urls", namespace="promotions")),
     path("api/payments/", include("payments.urls", namespace="payments")),
     path(
@@ -65,8 +56,18 @@ urlpatterns = [
         include("dashboard_statistics.urls", namespace="dashboard_statistics"),
     ),
     path("api/services/", include("beauty_service.urls", namespace="services")),
-    path("api/reset_db/", reset_db.as_view(), name="reset"),
 ]
+if settings.APP_ENV == "development":
+
+    class reset_db(APIView):
+        def post(self, request, *args, **kwargs):
+            call_command("flush", interactive=False)
+            return Response({"message": "Database reset successfully."}, status=200)
+
+    urlpatterns += [
+        path("api/reset_db/", reset_db.as_view(), name="reset"),
+    ]
+
 
 if settings.DEBUG:
     urlpatterns += static(
