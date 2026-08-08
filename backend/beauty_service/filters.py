@@ -22,7 +22,7 @@ class ServicesFilter(filters.FilterSet):
         lookup_expr="icontains",
     )
 
-    salon = NumberInFilter(
+    salons = NumberInFilter(
         field_name="masters__salons__id",
     )
 
