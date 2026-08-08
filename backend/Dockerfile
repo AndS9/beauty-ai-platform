@@ -11,7 +11,9 @@ RUN python -m pip install --no-cache-dir -r requirements.txt
 
 RUN useradd -u10100 -m appuser
 
-COPY --chown=appuser:appuser . .
+COPY  . .
+
+RUN chown -R appuser:appuser /app
 
 USER appuser
 
