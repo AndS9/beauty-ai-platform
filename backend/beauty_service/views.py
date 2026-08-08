@@ -1,7 +1,10 @@
 from django.db.models import Count, Q
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics
 from rest_framework.filters import OrderingFilter
 from users.models import MasterStatus
+
+from beauty_service.filters import ServicesFilter
 
 from .models import Service
 from .serializers import ServicesSerializer
@@ -9,7 +12,11 @@ from .serializers import ServicesSerializer
 
 class ServicesListView(generics.ListAPIView):
     serializer_class = ServicesSerializer
-    filter_backends = (OrderingFilter,)
+    filter_backends = (
+        DjangoFilterBackend,
+        OrderingFilter,
+    )
+    filterset_class = ServicesFilter
 
     ordering_fields = (
         "name",
@@ -25,8 +32,8 @@ class ServicesListView(generics.ListAPIView):
             )
             .annotate(
                 popularity=Count(
-                    "masters__master_appointments",
-                    filter=Q(masters__master_appointments__status="completed"),
+                    "masters__appointments",
+                    filter=Q(masters__appointments__status="completed"),
                     distinct=True,
                 )
             )

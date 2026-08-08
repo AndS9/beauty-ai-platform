@@ -1,6 +1,12 @@
+import os
+from uuid import uuid4
+
 from django.db import models
 
-from beauty_service.services import generate_upload_path
+
+def generate_upload_path(instance, filename) -> str:
+    ext = os.path.splitext(filename)[1].lower()
+    return f"services/{uuid4()}{ext}"
 
 
 class ServiceCategory(models.Model):
