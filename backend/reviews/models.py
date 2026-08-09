@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.core.validators import (
     MaxValueValidator,
-    MinValueValidator
+    MinValueValidator,
 )
 
 from django.db import models
@@ -16,11 +16,6 @@ class Review(models.Model):
     client = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         related_name="reviews_written",
-        on_delete=models.CASCADE,
-    )
-    master = models.ForeignKey(
-        "users.Master",
-        related_name="reviews_received",
         on_delete=models.CASCADE,
     )
     rating = models.PositiveSmallIntegerField(
@@ -39,7 +34,7 @@ class Review(models.Model):
         )
 
     def __str__(self) -> str:
-        return f"Review #{self.id} — {self.rating}/5 for {self.master}"
+        return f"Review #{self.id} — {self.rating}/5 for {self.appointment.master}"
 
 
 class SalonReview(models.Model):

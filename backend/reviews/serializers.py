@@ -10,12 +10,11 @@ class ReviewSerializer(serializers.ModelSerializer):
             "id",
             "appointment",
             "client",
-            "master",
             "rating",
             "comment",
             "created_at",
         )
-        read_only_fields = ("id", "client", "master", "created_at")
+        read_only_fields = ("id", "client", "created_at")
 
 
 class MasterReviewSerializer(serializers.ModelSerializer):

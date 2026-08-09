@@ -49,7 +49,7 @@ class ReviewListCreateView(
                 "Відгук можна залишити тільки на завершене бронювання."
             )
 
-        serializer.save(client=self.request.user, master=appointment.master)
+        serializer.save(client=self.request.user)
 
 
 class ReviewDetailView(
