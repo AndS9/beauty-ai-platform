@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { API_BASE_URL } from '../../services/authService';
+import { verifyEmail } from '../../services/authService';
 import './VerifyEmailPage.scss';
 
 export const VerifyEmailPage = () => {
@@ -12,7 +12,7 @@ export const VerifyEmailPage = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const verifyEmail = async () => {
+    const verifyEmailRequest = async () => {
       if (!uidb64 || !token) {
         setStatus('error');
         setMessage('Неправильне посилання для підтвердження.');
@@ -20,17 +20,7 @@ export const VerifyEmailPage = () => {
       }
 
       try {
-        const response = await fetch(
-          `${API_BASE_URL}/users/verify-email/${uidb64}/${token}/`,
-          {
-            method: 'GET',
-          },
-        );
-
-        if (!response.ok) {
-          throw new Error('Підтвердження не вдалося.');
-        }
-
+        await verifyEmail(uidb64, token);
         setStatus('success');
         setMessage('Email успішно підтверджено. Ви можете увійти.');
       } catch (error) {
@@ -43,7 +33,7 @@ export const VerifyEmailPage = () => {
       }
     };
 
-    verifyEmail();
+    verifyEmailRequest();
   }, [uidb64, token]);
 
   return (

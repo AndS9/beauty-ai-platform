@@ -165,6 +165,27 @@ export const verifyToken = async (token?: string) => {
   return true;
 };
 
+export const verifyEmail = async (uidb64: string, token: string) => {
+  const response = await fetch(`${API_BASE_URL}/auth/verify-email/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ uidb64, token }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => null);
+    throw new Error(
+      errorData?.detail ||
+        errorData?.message ||
+        `Email verification failed with status ${response.status}`,
+    );
+  }
+
+  return response.json().catch(() => null);
+};
+
 export const registerUser = async (payload: ExtendedRegisterPayload) => {
   try {
     const response = await fetch(`${API_BASE_URL}/users/register/`, {
@@ -253,11 +274,6 @@ export const loginUser = async (payload: LoginPayload) => {
     throw error;
   }
 };
-
-
-
-
-
 
 export const resetDatabase = async () => {
   const response = await fetch(`${API_BASE_URL}/reset_db/`, {
