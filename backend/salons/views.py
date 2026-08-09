@@ -90,12 +90,12 @@ class SalonListView(generics.ListAPIView):
     serializer_class = SalonListSerializer
     filter_backends = (SalonOrderingFilter,)
 
-    ordering_fields = (
-        "rating",
-        "name",
-        "reviews",
-        "popularity",
-    )
+    ordering_fields = {
+        "rating": "average_rating",
+        "reviews": "total_reviews",
+        "popularity": "completed_services",
+        "name": "name",
+    }
 
     ordering = ("-average_rating",)
 
@@ -106,8 +106,8 @@ class SalonListView(generics.ListAPIView):
                 salon_status=SalonStatus.ACTIVE,
             )
             .annotate(
-                average_rating=Avg("salon_reviews_received__rating"),
-                total_reviews=Count("salon_reviews_received", distinct=True),
+                average_rating=Avg("appointments__review__rating"),
+                total_reviews=Count("appointments__review", distinct=True),
                 masters_count=Count("masters", distinct=True),
                 service_count=Count(
                     "masters__services",
@@ -122,4 +122,5 @@ class SalonListView(generics.ListAPIView):
             )
             .filter(service_count__gt=0)
             .prefetch_related("working_hours")
+            .distinct()
         )

@@ -18,12 +18,15 @@ Including another URLconf
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
+from django.core.management import call_command
 from django.urls import include, path
 from drf_spectacular.views import (
     SpectacularAPIView,
     SpectacularRedocView,
     SpectacularSwaggerView,
 )
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -41,7 +44,7 @@ urlpatterns = [
     ),
     path("api/appointments/", include("appointments.urls")),
     path("api/salons/", include("salons.urls", namespace="salons")),
-    path("api/reviews/", include("reviews.urls")),
+    path("api/", include("reviews.urls")),
     path("api/promotions/", include("promotions.urls", namespace="promotions")),
     path("api/payments/", include("payments.urls", namespace="payments")),
     path(
@@ -52,7 +55,19 @@ urlpatterns = [
         "api/dashboard-statistics/",
         include("dashboard_statistics.urls", namespace="dashboard_statistics"),
     ),
+    path("api/services/", include("beauty_service.urls", namespace="services")),
 ]
+if settings.APP_ENV == "development":
+
+    class reset_db(APIView):
+        def post(self, request, *args, **kwargs):
+            call_command("flush", interactive=False)
+            return Response({"message": "Database reset successfully."}, status=200)
+
+    urlpatterns += [
+        path("api/reset_db/", reset_db.as_view(), name="reset"),
+    ]
+
 
 if settings.DEBUG:
     urlpatterns += static(

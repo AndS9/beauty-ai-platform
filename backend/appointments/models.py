@@ -14,12 +14,12 @@ class Appointment(models.Model):
 
     client = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        related_name="client_appointments",
+        related_name="appointments",
         on_delete=models.CASCADE,
     )
     master = models.ForeignKey(
         "users.Master",
-        related_name="master_appointments",
+        related_name="appointments",
         on_delete=models.CASCADE,
     )
     salon = models.ForeignKey(
@@ -83,6 +83,9 @@ class AppointmentReminder(models.Model):
         choices=Status.choices,
         default=Status.PENDING,
     )
+
+    is_client_sent = models.BooleanField(default=False)
+    is_master_sent = models.BooleanField(default=False)
 
     sent_at = models.DateTimeField(
         null=True,

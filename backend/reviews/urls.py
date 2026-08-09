@@ -1,6 +1,7 @@
 from django.urls import path
 
 from .views import (
+    AppointmentReviewView,
     MasterReviewDetailView,
     MasterReviewListView,
     ReviewDetailView,
@@ -8,12 +9,19 @@ from .views import (
 )
 
 urlpatterns = [
-    path("", ReviewListCreateView.as_view(), name="review-list-create"),
-    path("<int:pk>/", ReviewDetailView.as_view(), name="review-detail"),
-    path("masters/me/", MasterReviewListView.as_view(), name="master-review-list"),
+    path("reviews/", ReviewListCreateView.as_view(), name="review-list-create"),
+    path("reviews/<int:pk>/", ReviewDetailView.as_view(), name="review-detail"),
     path(
-        "<int:pk>/masters/me/",
+        "reviews/masters/me/", MasterReviewListView.as_view(), name="master-review-list"
+    ),
+    path(
+        "reviews/<int:pk>/masters/me/",
         MasterReviewDetailView.as_view(),
         name="master-review-detail",
+    ),
+    path(
+        "appointments/<int:appointment_id>/review/",
+        AppointmentReviewView.as_view(),
+        name="appointment-review",
     ),
 ]

@@ -159,13 +159,13 @@ class Master(models.Model):
     @property
     def average_rating(self) -> float:
         """Calculate average rating, returning 0.0 if no reviews exist."""
-        avg = self.reviews_received.aggregate(average=Avg("rating"))["average"]
+        avg = self.appointments.review.aggregate(average=Avg("rating"))["average"]
         return round(avg, 2) if avg is not None else 0.0
 
     @property
     def total_reviews(self) -> int:
         """Return total number of reviews received by the master."""
-        return self.reviews_received.count()
+        return self.appointments.review.count()
 
     @property
     def is_independent(self) -> bool:

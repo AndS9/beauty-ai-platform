@@ -22,6 +22,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 load_dotenv(BASE_DIR / ".env")
 
+APP_ENV = os.environ.get("APP_ENV", "production")
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
@@ -32,13 +34,26 @@ SECRET_KEY = os.environ.get(
 )
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+if APP_ENV == "development":
+    DEBUG = True
+elif APP_ENV == "production":
+    DEBUG = False
+else:
+    raise ValueError(f"Unknown APP_ENV: {APP_ENV}")
 
-ALLOWED_HOSTS = [
-    "beautyaiservice.polandcentral.cloudapp.azure.com",
-    "127.0.0.1",
-    "localhost",
-]
+if APP_ENV == "development":
+    ALLOWED_HOSTS = [
+        "127.0.0.1",
+        "localhost",
+    ]
+elif APP_ENV == "production":
+    ALLOWED_HOSTS = [
+        "beautyaiservice.polandcentral.cloudapp.azure.com",
+        "127.0.0.1",
+        "localhost",
+    ]
+else:
+    raise ValueError(f"Unknown APP_ENV: {APP_ENV}")
 
 # Application definition
 

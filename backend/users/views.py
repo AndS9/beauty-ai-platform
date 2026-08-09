@@ -98,15 +98,15 @@ class MasterListView(generics.ListAPIView):
                 )
             )
             .annotate(
-                rating=Avg("reviews_received__rating"),
+                rating=Avg("appointments__review__rating"),
                 name=Concat(
                     "user__first_name",
                     Value(" "),
                     "user__last_name",
                 ),
                 popularity=Count(
-                    "master_appointments",
-                    filter=Q(master_appointments__status="completed"),
+                    "appointments",
+                    filter=Q(appointments__status="completed"),
                     distinct=True,
                 ),
             )

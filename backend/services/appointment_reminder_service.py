@@ -69,39 +69,46 @@ class AppointmentReminderService:
                     "status": appointment.status,
                 }
 
-                try:
-                    # Send email to client
-                    EmailService.send_email(
-                        recipient=appointment.client.email,
-                        subject=subject,
-                        context=context,
-                    )
-                    # Send email to master
-                    EmailService.send_email(
-                        recipient=appointment.master.user.email,
-                        subject=subject,
-                        context=context,
-                    )
-                except Exception as e:
-                    # Mark reminder as failed if email sending fails
-                    reminder.status = AppointmentReminder.Status.FAILED
-                    logger.exception(
-                        "Failed to send %s reminder for appointment ID %s: %s",
-                        reminder_type,
-                        appointment.id,
-                        e,
-                    )
-                else:
-                    # Mark reminder as successfully sent
+                # Check and send to the client (if not already sent successfully)
+                client_sent = getattr(reminder, "is_client_sent", False)
+                if not client_sent:
+                    try:
+                        EmailService.send_email(
+                            recipient=appointment.client.email,
+                            subject=subject,
+                            context=context,
+                        )
+                        client_sent = True
+                    except Exception as e:
+                        logger.exception(
+                            "Failed to send client reminder for appointment %s: %s",
+                            appointment.id,
+                            e,
+                        )
+
+                # Check and send to the master
+                master_sent = getattr(reminder, "is_master_sent", False)
+                if not master_sent:
+                    try:
+                        EmailService.send_email(
+                            recipient=appointment.master.user.email,
+                            subject=subject,
+                            context=context,
+                        )
+                        master_sent = True
+                    except Exception as e:
+                        logger.exception(
+                            "Failed to send master reminder for appointment %s: %s",
+                            appointment.id,
+                            e,
+                        )
+
+                # Update the status in the database
+                if client_sent and master_sent:
                     reminder.status = AppointmentReminder.Status.SENT
                     reminder.sent_at = now
-                    logger.info(
-                        f"{reminder_type} reminder sent successfully",
-                        extra={
-                            "appointment": appointment.id,
-                            "type": reminder_type,
-                        },
-                    )
+                else:
+                    reminder.status = AppointmentReminder.Status.FAILED
 
                 reminder.save()
 
