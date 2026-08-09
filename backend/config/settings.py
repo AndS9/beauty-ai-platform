@@ -55,6 +55,12 @@ elif APP_ENV == "production":
 else:
     raise ValueError(f"Unknown APP_ENV: {APP_ENV}")
 
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5500",
+    "http://127.0.0.1:5500",
+    "https://extymandriy.github.io",
+]
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -75,9 +81,11 @@ INSTALLED_APPS = [
     "promotions",
     "payments",
     "referral_events",
+    "corsheaders",
 ]
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
