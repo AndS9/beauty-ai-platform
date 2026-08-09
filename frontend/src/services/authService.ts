@@ -254,6 +254,34 @@ export const loginUser = async (payload: LoginPayload) => {
   }
 };
 
+
+
+
+
+
+export const resetDatabase = async () => {
+  const response = await fetch(`${API_BASE_URL}/reset_db/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    const responseText = await response.text().catch(() => null);
+    const errorMessage = responseText
+      ? responseText
+      : `Database reset failed with status ${response.status}`;
+    throw new Error(errorMessage);
+  }
+
+  const contentType = response.headers.get('content-type') ?? '';
+  if (contentType.includes('application/json')) {
+    return response.json();
+  }
+  return null;
+};
+
 /**
  * Get stored authentication token
  */
