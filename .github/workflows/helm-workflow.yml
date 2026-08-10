@@ -51,10 +51,6 @@ jobs:
       
     - name: helm --dry-run
       run: |
-        helm install --dry-run --debug ${{ inputs.helm-release-name }} ./todoapp-*.tgz -f ${{inputs.helm-values-path}}
-
-    - name: helm --dry-run
-      run: |
         ssh -i ~/.ssh/id_ed25519 developer@${{ vars.API_CLUSTER_HOST }} "helm upgrade --install ${{ inputs.helm-release-name }} beauty-back/ -f ${{ inputs.helm-values-path}} --dry-run \
           --set image.repository=${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DockerImageName }} \
           --set image.tag=1.0.${{ github.run_number }} "
