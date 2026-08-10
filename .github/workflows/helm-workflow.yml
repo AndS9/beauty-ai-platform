@@ -59,10 +59,11 @@ jobs:
           
     - name: Deploy Helm to ${{ inputs.environment }}
       run: |
-         ssh -i ~/.ssh/id_ed25519 developer@${{ vars.API_CLUSTER_HOST }} "helm upgrade --install --atomic --wait --timeout 600s --debug ${{ inputs.helm-release-name }} beauty-back/ -f ${{ inputs.helm-values-path}} \
+         ssh -i ~/.ssh/id_ed25519 developer@${{ vars.API_CLUSTER_HOST }} "helm upgrade --install --atomic --wait --timeout 600s --debug ${{ inputs.helm-release-name }} beauty-back/ \
           -f ${{ inputs.helm-values-path }} \
           -n ${{env.namespace}} \
           --create-namespace \
+          -f ${{ inputs.helm-values-path}} \
           --set image.repository=${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DockerImageName }} \
           --set image.tag=1.0.${{ github.run_number }} \
           --set-string postgres.secrets.POSTGRES_DB=${{ secrets.POSTGRES_DB }} \
