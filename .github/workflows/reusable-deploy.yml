@@ -53,7 +53,7 @@ jobs:
       run: |
        ssh -i ~/.ssh/id_ed25519 developer@${{ vars.API_CLUSTER_HOST }} "helm upgrade --install beauty-front beauty-front/ -f ${{env.path_to_val}} --dry-run \
           --set frontend.image.repository=${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DockerImageName }} \
-          --set frontend.image.tag=${{inputs.version}}
+          --set frontend.image.tag=${{inputs.version}}"
 
     - name: Deploy Helm to cluster
       run: |
@@ -61,4 +61,4 @@ jobs:
           --namespace ${{env.namespace}} \
           -f ${{env.path_to_val}} \
           --set frontend.image.repository=${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DockerImageName }} \
-          --set frontend.image.tag=${{inputs.version}}
+          --set frontend.image.tag=${{inputs.version}}"
