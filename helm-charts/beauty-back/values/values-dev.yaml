@@ -7,9 +7,9 @@ postgres:
   namespace: beauty-dev
   
   secrets:
-    POSTGRES_DB: beautydb
-    POSTGRES_USER: igoryok
-    POSTGRES_PASSWORD: KB24lapassDb!09
+    POSTGRES_DB: placeholder
+    POSTGRES_USER: placeholder
+    POSTGRES_PASSWORD: placeholder
 
 common:
   namespace: beauty-dev
@@ -23,13 +23,13 @@ config:
   TESTING: true
 
 secrets:
-  DJANGO_SECRET_KEY: django-insecure-hl%3e)9_(s9ku@k4to7jo7=t1@ae4-4%9jgku*!+ywzt*q)*y(
-  GOOGLE_CLIENT_ID: 136485800268-6lrfcd7uh3g14jhaspul8k2n8rpnm8o6.apps.googleusercontent.com
-  EMAIL_HOST_USER: kluzodota@gmail.com
-  EMAIL_HOST_PASSWORD: toceobwjqnzydznm
-  GEOAPIFY_API_KEY: a7580c03d6a343c1871c71c76d55f16c
-  POSTGRES_DB: beautydb
-  POSTGRES_USER: igoryok
-  POSTGRES_PASSWORD: KB24lapassDb!09
-  POSTGRES_HOST: postgres-0.postgres
-  POSTGRES_PORT: "5432"
+  DJANGO_SECRET_KEY: placeholder
+  GOOGLE_CLIENT_ID: placeholder
+  EMAIL_HOST_USER: placeholder
+  EMAIL_HOST_PASSWORD: placeholder
+  GEOAPIFY_API_KEY: placeholder
+  POSTGRES_DB: placeholder
+  POSTGRES_USER: placeholder
+  POSTGRES_PASSWORD: placeholder
+  POSTGRES_HOST: placeholder
+  POSTGRES_PORT: placeholder
