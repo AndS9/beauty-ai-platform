@@ -98,67 +98,22 @@ jobs:
       run: helm template beautyfront ./beauty-back
 
   
-  deploying:
-    environment: development
-    name: Deploy to development env
-    needs: [docker-ci, helm-ci]  # DON'T FORGET TO ADD DOCKER CI 
-    runs-on: ubuntu-latest
+  deploying-to-dev:
+    name: Deploy helm dev
+    uses: .github/workflows/helm-workflow.yml
+    needs: [docker-ci, helm-ci]
+    secrets: inherit
+    with:
+      environment: "development"
+      version: "1.0.${{ github.run_number }}"
 
-    steps:
-    - name: Upload helm chart
-      uses: actions/download-artifact@v4
-      with:
-        name: helm-artifacts
-        path: .
+  deploying-to-prod:
+    name: Deploy helm to production
+    uses: .github/workflows/helm-workflow.yml
+    needs: [deploying-to-dev]
+    secrets: inherit
+    with:
+      environment: "production"
+      version: "1.0.${{ github.run_number }}"
+      helm-values-path: "./beauty-back/values/values-prod.yaml"
     
-    - name: add_key
-      run: | 
-        mkdir -p ~/.ssh
-        chmod 700 ~/.ssh
-        
-        echo "${{ secrets.PRIVATE_KEY }}" > ~/.ssh/id_ed25519
-        chmod 600 ~/.ssh/id_ed25519
-
-        ssh-keyscan -H "${{ vars.API_CLUSTER_HOST }}" >> ~/.ssh/known_hosts
-        chmod 644 ~/.ssh/known_hosts
-             
-    - name: copy package to VM
-      run: scp -i ~/.ssh/id_ed25519 -r beauty-back developer@${{ vars.API_CLUSTER_HOST }}:/home/developer/
-
-    - name: helm --dry-run
-      run: |
-       ssh -i ~/.ssh/id_ed25519 developer@${{ vars.API_CLUSTER_HOST }} "helm upgrade --install beauty-back beauty-back/ -f beauty-back/values/values-dev.yaml --dry-run \
-          --set image.repository=${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DockerImageName }} \
-          --set image.tag=1.0.${{ github.run_number }} \
-          --set-string postgres.secrets.POSTGRES_DB=${{ secrets.POSTGRES_DB }} \
-          --set-string postgres.secrets.POSTGRES_USER=${{ secrets.POSTGRES_USER }} \
-          --set-string postgres.secrets.POSTGRES_PASSWORD=\"${{ secrets.POSTGRES_PASSWORD }}\" \
-          --set-string secrets.DJANGO_SECRET_KEY=\"${{ secrets.DJANGO_SECRET_KEY }}\" \
-          --set-string secrets.GOOGLE_CLIENT_ID=\"${{ secrets.GOOGLE_CLIENT_ID}}\" \
-          --set-string secrets.EMAIL_HOST_USER=${{ secrets.EMAIL_HOST_USER}} \
-          --set-string secrets.EMAIL_HOST_PASSWORD=\"${{ secrets.EMAIL_HOST_PASSWORD}}\" \
-          --set-string secrets.GEOAPIFY_API_KEY=${{ secrets.GEOAPIFY_API_KEY}} \
-          --set-string secrets.POSTGRES_DB=${{ secrets.POSTGRES_DB }} \
-          --set-string secrets.POSTGRES_USER=${{ secrets.POSTGRES_USER }} \
-          --set-string secrets.POSTGRES_PASSWORD=\"${{ secrets.POSTGRES_PASSWORD }}\" \
-          --set-string secrets.POSTGRES_HOST=${{ secrets.POSTGRES_HOST }}\
-          --set-string secrets.POSTGRES_PORT=${{ secrets.POSTGRES_PORT}}"
-
-    - name: Deploy Helm to cluster
-      run: |
-        ssh -i ~/.ssh/id_ed25519 developer@${{ vars.API_CLUSTER_HOST }} "helm upgrade --install beauty-back beauty-back/ -f beauty-back/values/values-dev.yaml \
-          --set image.repository=${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DockerImageName }} \
-          --set image.tag=1.0.${{ github.run_number }} \
-          --set-string postgres.secrets.POSTGRES_DB=${{ secrets.POSTGRES_DB }} \
-          --set-string postgres.secrets.POSTGRES_USER=${{ secrets.POSTGRES_USER }} \
-          --set-string postgres.secrets.POSTGRES_PASSWORD=\"${{ secrets.POSTGRES_PASSWORD }}\" \
-          --set-string secrets.DJANGO_SECRET_KEY=\"${{ secrets.DJANGO_SECRET_KEY }}\" \
-          --set-string secrets.GOOGLE_CLIENT_ID=\"${{ secrets.GOOGLE_CLIENT_ID}}\" \
-          --set-string secrets.EMAIL_HOST_USER=${{ secrets.EMAIL_HOST_USER}} \
-          --set-string secrets.EMAIL_HOST_PASSWORD=\"${{ secrets.EMAIL_HOST_PASSWORD}}\" \
-          --set-string secrets.GEOAPIFY_API_KEY=${{ secrets.GEOAPIFY_API_KEY}} \
-          --set-string secrets.POSTGRES_DB=${{ secrets.POSTGRES_DB }} \
-          --set-string secrets.POSTGRES_USER=${{ secrets.POSTGRES_USER }} \
-          --set-string secrets.POSTGRES_PASSWORD=\"${{ secrets.POSTGRES_PASSWORD }}\" \
-          --set-string secrets.POSTGRES_HOST=${{ secrets.POSTGRES_HOST }}\
-          --set-string secrets.POSTGRES_PORT=${{ secrets.POSTGRES_PORT}}"
