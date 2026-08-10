@@ -27,7 +27,7 @@ jobs:
 
     env:
       namespace: ${{ inputs.environment == 'development' && 'beauty-dev' || 'beauty-prod'}}
-      path_to_val: ${{ inputs.environment == 'development' && '' || 'beauty-front/values-prod'}}
+      path_to_val: ${{ inputs.environment == 'development' && 'beauty-front/values.yaml' || 'beauty-front/values-prod'}}
     steps:
     - name: Upload helm chart
       uses: actions/download-artifact@v4
