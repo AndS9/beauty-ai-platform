@@ -57,15 +57,21 @@ jobs:
           
     - name: Deploy Helm to ${{ inputs.environment }}
       run: |
-        helm upgrade --install --atomic --wait --timeout 600s --debug ${{ inputs.helm-release-name }} beauty-back/ -f ${{ inputs.helm-values-path}} \
+         ssh -i ~/.ssh/id_ed25519 developer@${{ vars.API_CLUSTER_HOST }} "helm upgrade --install --atomic --wait --timeout 600s --debug ${{ inputs.helm-release-name }} beauty-back/ -f ${{ inputs.helm-values-path}} \
           -f ${{ inputs.helm-values-path }} \
-          --set mysql.secrets.MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }} \
-          --set mysql.secrets.MYSQL_USER=${{ secrets.MYSQL_USER }} \
-          --set mysql.secrets.MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }} \
-          --set todoapp.secrets.SECRET_KEY=${{ secrets.TODOAPP_SECRET_KEY }} \
-          --set todoapp.secrets.DB_NAME=${{ secrets.DB_NAME }} \
-          --set todoapp.secrets.DB_USER=${{ secrets.DB_USER }} \
-          --set todoapp.secrets.DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
-          --set todoapp.secrets.DB_HOST=${{ secrets.DB_HOST }} \
-          --set todoapp.image.repository=${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DockerImageName }} \
-          --set todoapp.image.tag=${{ github.sha }}
+          --set image.repository=${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DockerImageName }} \
+          --set image.tag=1.0.${{ github.run_number }} \
+          --set-string postgres.secrets.POSTGRES_DB=${{ secrets.POSTGRES_DB }} \
+          --set-string postgres.secrets.POSTGRES_USER=${{ secrets.POSTGRES_USER }} \
+          --set-string postgres.secrets.POSTGRES_PASSWORD=\"${{ secrets.POSTGRES_PASSWORD }}\" \
+          --set-string secrets.DJANGO_SECRET_KEY=\"${{ secrets.DJANGO_SECRET_KEY }}\" \
+          --set-string secrets.GOOGLE_CLIENT_ID=\"${{ secrets.GOOGLE_CLIENT_ID}}\" \
+          --set-string secrets.EMAIL_HOST_USER=${{ secrets.EMAIL_HOST_USER}} \
+          --set-string secrets.EMAIL_HOST_PASSWORD=\"${{ secrets.EMAIL_HOST_PASSWORD}}\" \
+          --set-string secrets.GEOAPIFY_API_KEY=${{ secrets.GEOAPIFY_API_KEY}} \
+          --set-string secrets.POSTGRES_DB=${{ secrets.POSTGRES_DB }} \
+          --set-string secrets.POSTGRES_USER=${{ secrets.POSTGRES_USER }} \
+          --set-string secrets.POSTGRES_PASSWORD=\"${{ secrets.POSTGRES_PASSWORD }}\" \
+          --set-string secrets.POSTGRES_HOST=${{ secrets.POSTGRES_HOST }}\
+          --set-string secrets.POSTGRES_PORT=${{ secrets.POSTGRES_PORT}}"
+
