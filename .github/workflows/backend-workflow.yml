@@ -130,35 +130,35 @@ jobs:
        ssh -i ~/.ssh/id_ed25519 developer@${{ vars.API_CLUSTER_HOST }} "helm upgrade --install beauty-back beauty-back/ -f beauty-back/values/values-dev.yaml --dry-run \
           --set image.repository=${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DockerImageName }} \
           --set image.tag=1.0.${{ github.run_number }} \
-          --set postgres.secrets.POSTGRES_DB=${{ secrets.POSTGRES_DB }} \
-          --set postgres.secrets.POSTGRES_USER=${{ secrets.POSTGRES_USER }} \
-          --set postgres.secrets.POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} \
-          --set secrets.DJANGO_SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }} \
-          --set secrets.GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID}} \
-          --set secrets.EMAIL_HOST_USER=${{ secrets.EMAIL_HOST_USER}} \
-          --set secrets.EMAIL_HOST_PASSWORD=${{ secrets.EMAIL_HOST_PASSWORD}} \
-          --set secrets.GEOAPIFY_API_KEY=${{ secrets.GEOAPIFY_API_KEY}} \
-          --set secrets.POSTGRES_DB=${{ secrets.POSTGRES_DB }} \
-          --set secrets.POSTGRES_USER=${{ secrets.POSTGRES_USER }} \
-          --set secrets.POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} \
-          --set secrets.POSTGRES_HOST=${{ secrets.POSTGRES_HOST }}\
-          --set secrets.POSTGRES_PORT=${{ secrets.POSTGRES_PORT}}"
+          --set-string postgres.secrets.POSTGRES_DB=${{ secrets.POSTGRES_DB }} \
+          --set-string postgres.secrets.POSTGRES_USER=${{ secrets.POSTGRES_USER }} \
+          --set-string postgres.secrets.POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} \
+          --set-string secrets.DJANGO_SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }} \
+          --set-string secrets.GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID}} \
+          --set-string secrets.EMAIL_HOST_USER=${{ secrets.EMAIL_HOST_USER}} \
+          --set-string secrets.EMAIL_HOST_PASSWORD=${{ secrets.EMAIL_HOST_PASSWORD}} \
+          --set-string secrets.GEOAPIFY_API_KEY=${{ secrets.GEOAPIFY_API_KEY}} \
+          --set-string secrets.POSTGRES_DB=${{ secrets.POSTGRES_DB }} \
+          --set-string secrets.POSTGRES_USER=${{ secrets.POSTGRES_USER }} \
+          --set-string secrets.POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} \
+          --set-string secrets.POSTGRES_HOST=${{ secrets.POSTGRES_HOST }}\
+          --set-string secrets.POSTGRES_PORT=${{ secrets.POSTGRES_PORT}}"
 
     - name: Deploy Helm to cluster
       run: |
         ssh -i ~/.ssh/id_ed25519 developer@${{ vars.API_CLUSTER_HOST }} "helm upgrade --install beauty-back beauty-back/ -f beauty-back/values/values-dev.yaml \
           --set image.repository=${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DockerImageName }} \
           --set image.tag=1.0.${{ github.run_number }} \
-          --set postgres.secrets.POSTGRES_DB=${{ secrets.POSTGRES_DB }} \
-          --set postgres.secrets.POSTGRES_USER=${{ secrets.POSTGRES_USER }} \
-          --set postgres.secrets.POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} \
-          --set secrets.DJANGO_SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }} \
-          --set secrets.GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID}} \
-          --set secrets.EMAIL_HOST_USER=${{ secrets.EMAIL_HOST_USER}} \
-          --set secrets.EMAIL_HOST_PASSWORD=${{ secrets.EMAIL_HOST_PASSWORD}} \
-          --set secrets.GEOAPIFY_API_KEY=${{ secrets.GEOAPIFY_API_KEY}} \
-          --set secrets.POSTGRES_DB=${{ secrets.POSTGRES_DB }} \
-          --set secrets.POSTGRES_USER=${{ secrets.POSTGRES_USER }} \
-          --set secrets.POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} \
-          --set secrets.POSTGRES_HOST=${{ secrets.POSTGRES_HOST }}\
-          --set secrets.POSTGRES_PORT=${{ secrets.POSTGRES_PORT}}"
+          --set-string postgres.secrets.POSTGRES_DB=${{ secrets.POSTGRES_DB }} \
+          --set-string postgres.secrets.POSTGRES_USER=${{ secrets.POSTGRES_USER }} \
+          --set-string postgres.secrets.POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} \
+          --set-string secrets.DJANGO_SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }} \
+          --set-string secrets.GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID}} \
+          --set-string secrets.EMAIL_HOST_USER=${{ secrets.EMAIL_HOST_USER}} \
+          --set-string secrets.EMAIL_HOST_PASSWORD=${{ secrets.EMAIL_HOST_PASSWORD}} \
+          --set-string secrets.GEOAPIFY_API_KEY=${{ secrets.GEOAPIFY_API_KEY}} \
+          --set-string secrets.POSTGRES_DB=${{ secrets.POSTGRES_DB }} \
+          --set-string secrets.POSTGRES_USER=${{ secrets.POSTGRES_USER }} \
+          --set-string secrets.POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} \
+          --set-string secrets.POSTGRES_HOST=${{ secrets.POSTGRES_HOST }}\
+          --set-string secrets.POSTGRES_PORT=${{ secrets.POSTGRES_PORT}}"
