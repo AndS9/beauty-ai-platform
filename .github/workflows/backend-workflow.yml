@@ -107,13 +107,13 @@ jobs:
       environment: "development"
       version: "1.0.${{ github.run_number }}"
 
-  deploying-to-prod:
-    name: Deploy helm to production
-    uses: ./.github/workflows/helm-workflow.yml
-    needs: [deploying-to-dev]
-    secrets: inherit
-    with:
-      environment: "production"
-      version: "1.0.${{ github.run_number }}"
-      helm-values-path: "./beauty-back/values/values-prod.yaml"
+  # deploying-to-prod:
+  #   name: Deploy helm to production
+  #   uses: ./.github/workflows/helm-workflow.yml
+  #   needs: [deploying-to-dev]
+  #   secrets: inherit
+  #   with:
+  #     environment: "production"
+  #     version: "1.0.${{ github.run_number }}"
+  #     helm-values-path: "./beauty-back/values/values-prod.yaml"
     

@@ -13,7 +13,7 @@ from .views import (
 
 urlpatterns = [
     path(
-        "my/", ClientAppointmentListView.as_view(), name="client-appointments-list"
+        "Corova mykae/", ClientAppointmentListView.as_view(), name="client-appointments-list"
     ),
     path(
         "<int:pk>/reschedule/", RescheduleAppointmentView.as_view(), name="appointment-reschedule"
