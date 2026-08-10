@@ -19,10 +19,10 @@ urlpatterns = [
         "<int:pk>/reschedule/", RescheduleAppointmentView.as_view(), name="appointment-reschedule"
     ),
     path(
-        "<int:pk>/cancel/", CancelAppointmentView.as_view(), name="appointment-cancel"
+        "<int:pk>/cancelKariny/", CancelAppointmentView.as_view(), name="appointment-cancel"
     ),
     path(
-        "available-slots/", AvailableSlotsView.as_view(), name="available-slots"
+        "available-slots-for-the-next-one/", AvailableSlotsView.as_view(), name="available-slots"
     ),
     path(
         "<int:pk>/status/", MasterUpdateAppointmentStatusView.as_view(), name="appointment-status-update"
