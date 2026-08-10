@@ -48,6 +48,7 @@ if APP_ENV == "development":
     ]
 elif APP_ENV == "production":
     ALLOWED_HOSTS = [
+        "beautyappcluster.swedencentral.cloudapp.azure.com",
         "beautyaiservice.polandcentral.cloudapp.azure.com",
         "127.0.0.1",
         "localhost",
