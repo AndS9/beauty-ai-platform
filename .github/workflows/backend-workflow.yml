@@ -129,7 +129,7 @@ jobs:
       run: |
        ssh -i ~/.ssh/id_ed25519 developer@${{ vars.API_CLUSTER_HOST }} "helm upgrade --install beauty-back beauty-back/ -f beauty-back/values/values-dev.yaml --dry-run \
           --set image.repository=${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DockerImageName }} \
-          --set image.tag=1.0.${{ github.run_number }}" \
+          --set image.tag=1.0.${{ github.run_number }} \
           --set postgres.secrets.POSTGRES_DB=${{ secrets.POSTGRES_DB }} \
           --set postgres.secrets.POSTGRES_USER=${{ secrets.POSTGRES_USER }} \
           --set postgres.secrets.POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} \
@@ -148,7 +148,7 @@ jobs:
       run: |
         ssh -i ~/.ssh/id_ed25519 developer@${{ vars.API_CLUSTER_HOST }} "helm upgrade --install beauty-back beauty-back/ -f beauty-back/values/values-dev.yaml \
           --set image.repository=${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DockerImageName }} \
-          --set image.tag=1.0.${{ github.run_number }}" \
+          --set image.tag=1.0.${{ github.run_number }} \
           --set postgres.secrets.POSTGRES_DB=${{ secrets.POSTGRES_DB }} \
           --set postgres.secrets.POSTGRES_USER=${{ secrets.POSTGRES_USER }} \
           --set postgres.secrets.POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} \
