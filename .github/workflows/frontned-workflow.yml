@@ -122,5 +122,6 @@ jobs:
     - name: Deploy Helm to cluster
       run: |
         ssh -i ~/.ssh/id_ed25519 developer@${{ vars.API_CLUSTER_HOST }} "helm upgrade --install beauty-front beauty-front/ \
+          -n beauty-dev \
           --set frontend.image.repository=${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DockerImageName }} \
           --set frontend.image.tag=1.0.${{ github.run_number }}"
