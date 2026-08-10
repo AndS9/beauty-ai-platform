@@ -1,0 +1,75 @@
+name: helm-uprade
+run-name: ${{ github.actor }} - ${{ github.ref_name }}
+
+on: 
+  workflow_call: 
+    inputs:
+      environment:
+        required: true
+        description: "Environment to deploy to"
+        type: string
+      version:
+        required: true
+        type: string
+      helm-values-path:
+        type: string
+        default: "./beauty-back/values/values-dev.yaml"
+      helm-release-name:
+        type: string
+        default: "beauty-back"
+
+env: 
+  DockerImageName: beauty-backend
+
+jobs: 
+
+  deploy-helm:
+    name: Deploying with helm to ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+
+    steps:
+    - name: Upload helm chart
+      uses: actions/download-artifact@v4
+      with:
+        name: helm-artifacts
+        path: .
+    
+    - name: add_key
+      run: | 
+        mkdir -p ~/.ssh
+        chmod 700 ~/.ssh
+        
+        echo "${{ secrets.PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+        chmod 600 ~/.ssh/id_ed25519
+
+        ssh-keyscan -H "${{ vars.API_CLUSTER_HOST }}" >> ~/.ssh/known_hosts
+        chmod 644 ~/.ssh/known_hosts
+             
+    - name: copy package to VM
+      run: scp -i ~/.ssh/id_ed25519 -r beauty-back developer@${{ vars.API_CLUSTER_HOST }}:/home/developer/
+      
+    - name: helm --dry-run
+      run: |
+        helm install --dry-run --debug ${{ inputs.helm-release-name }} ./todoapp-*.tgz -f ${{inputs.helm-values-path}}
+
+    - name: helm --dry-run
+      run: |
+        ssh -i ~/.ssh/id_ed25519 developer@${{ vars.API_CLUSTER_HOST }} "helm upgrade --install ${{ inputs.helm-release-name }} beauty-back/ -f ${{ inputs.helm-values-path}} --dry-run \
+          --set image.repository=${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DockerImageName }} \
+          --set image.tag=1.0.${{ github.run_number }} "
+          
+    - name: Deploy Helm to ${{ inputs.environment }}
+      run: |
+        helm upgrade --install --atomic --wait --timeout 600s --debug ${{ inputs.helm-release-name }} beauty-back/ -f ${{ inputs.helm-values-path}} \
+          -f ${{ inputs.helm-values-path }} \
+          --set mysql.secrets.MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }} \
+          --set mysql.secrets.MYSQL_USER=${{ secrets.MYSQL_USER }} \
+          --set mysql.secrets.MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }} \
+          --set todoapp.secrets.SECRET_KEY=${{ secrets.TODOAPP_SECRET_KEY }} \
+          --set todoapp.secrets.DB_NAME=${{ secrets.DB_NAME }} \
+          --set todoapp.secrets.DB_USER=${{ secrets.DB_USER }} \
+          --set todoapp.secrets.DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
+          --set todoapp.secrets.DB_HOST=${{ secrets.DB_HOST }} \
+          --set todoapp.image.repository=${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DockerImageName }} \
+          --set todoapp.image.tag=${{ github.sha }}
