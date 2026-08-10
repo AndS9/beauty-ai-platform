@@ -1,0 +1,23 @@
+common:
+  namespace: beauty-dev
+  environment: development
+
+frontend:
+  image:
+    repository: your_repo
+    tag: tag
+
+  replicas: 3
+  
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "150m"
+    limits:
+      memory: "256Mi"
+      cpu: "300m"
+
+  config:
+    backend_url: http://beautyaiservice.polandcentral.cloudapp.azure.com:8000
+    time_zone: Europe/Kyiv
+    

@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "beauty-back.fullname" . }}
+  namespace: {{ .Values.common.namespace }} 
+  labels:
+    {{- include "beauty-back.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "beauty-back.selectorLabels" . | nindent 4 }}
