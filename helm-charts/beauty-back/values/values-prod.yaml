@@ -1,0 +1,29 @@
+redis:
+  replicaCount: 2
+  namespace: beauty-prod
+
+postgres:
+  replicaCount: 1
+  namespace: beauty-prod
+  
+  secrets:
+    POSTGRES_DB: placeholder
+    POSTGRES_USER: placeholder
+    POSTGRES_PASSWORD: placeholder
+
+#Override values for staging environment
+
+common:
+  namespace: backend-prod
+  environment: production
+
+replicaCount: 3
+
+#PRODUCTION ADDITIONAL CONFIGS AND SECRETS
+config:
+  ENV_PROD: first
+  PROD: true
+secrets:
+  POSTGRES_DB: placeholder
+  POSTGRES_USER: placeholder
+  POSTGRES_PASSWORD: placeholder

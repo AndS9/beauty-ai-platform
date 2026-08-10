@@ -1,0 +1,8 @@
+namespace: environment-namespace
+
+replicaCount: 1
+
+secrets:
+  POSTGRES_DB: placeholder
+  POSTGRES_USER: placeholder
+  POSTGRES_PASSWORD: placeholder
