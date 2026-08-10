@@ -86,42 +86,12 @@ jobs:
       run: helm template beautyfront ./beauty-front
 
   
-  deploying:
-    environment: development
-    name: Deploy to development env
-    needs: [docker-ci, helm-ci]  # DON'T FORGET TO ADD DOCKER CI 
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Upload helm chart
-      uses: actions/download-artifact@v4
-      with:
-        name: helm-artifacts
-        path: .
+  deploying-to-dev:
+    name: Deploy front to dev
+    needs: [docker-ci, helm-ci]
+    secrets: inherit
+    uses: ./.github/workflows/reusable-deploy.yml
+    with:
+      environment: "development"
+      version: "1.0.${{ github.run_number }}"
     
-    - name: add_key
-      run: | 
-        mkdir -p ~/.ssh
-        chmod 700 ~/.ssh
-        
-        echo "${{ secrets.PRIVATE_KEY }}" > ~/.ssh/id_ed25519
-        chmod 600 ~/.ssh/id_ed25519
-
-        ssh-keyscan -H "${{ vars.API_CLUSTER_HOST }}" >> ~/.ssh/known_hosts
-        chmod 644 ~/.ssh/known_hosts
-             
-    - name: copy package to VM
-      run: scp -i ~/.ssh/id_ed25519 -r beauty-front developer@${{ vars.API_CLUSTER_HOST }}:/home/developer/
-
-    - name: helm --dry-run
-      run: |
-       ssh -i ~/.ssh/id_ed25519 developer@${{ vars.API_CLUSTER_HOST }} "helm upgrade --install beauty-front beauty-front/ --dry-run \
-          --set frontend.image.repository=${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DockerImageName }} \
-          --set frontend.image.tag=1.0.${{ github.run_number }}"
-
-    - name: Deploy Helm to cluster
-      run: |
-        ssh -i ~/.ssh/id_ed25519 developer@${{ vars.API_CLUSTER_HOST }} "helm upgrade --install beauty-front beauty-front/ \
-          --namespace beauty-dev \
-          --set frontend.image.repository=${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DockerImageName }} \
-          --set frontend.image.tag=1.0.${{ github.run_number }}"

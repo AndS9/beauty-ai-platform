@@ -1,0 +1,64 @@
+name: helm-uprade
+run-name: ${{ github.actor }} - ${{ github.ref_name }}
+
+on: 
+  workflow_call: 
+    inputs:
+      environment:
+        required: true
+        description: "Environment to deploy to"
+        type: string
+      version:
+        required: true
+        type: string
+      helm-release-name:
+        type: string
+        default: "beauty-front"
+
+env: 
+  DockerImageName: beauty-frontend
+
+jobs: 
+
+  deploy-helm:
+    name: Deploying with helm to ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+
+    env:
+      namespace: ${{ inputs.environment == 'development' && 'beauty-dev' || 'beauty-prod'}}
+      path_to_val: ${{ inputs.environment == 'development' && '' || 'beauty-front/values-prod'}}
+    steps:
+    - name: Upload helm chart
+      uses: actions/download-artifact@v4
+      with:
+        name: helm-artifacts
+        path: .
+    
+    - name: add_key
+      run: | 
+        mkdir -p ~/.ssh
+        chmod 700 ~/.ssh
+        
+        echo "${{ secrets.PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+        chmod 600 ~/.ssh/id_ed25519
+
+        ssh-keyscan -H "${{ vars.API_CLUSTER_HOST }}" >> ~/.ssh/known_hosts
+        chmod 644 ~/.ssh/known_hosts
+             
+    - name: copy package to VM
+      run: scp -i ~/.ssh/id_ed25519 -r beauty-front developer@${{ vars.API_CLUSTER_HOST }}:/home/developer/
+    
+    - name: helm --dry-run
+      run: |
+       ssh -i ~/.ssh/id_ed25519 developer@${{ vars.API_CLUSTER_HOST }} "helm upgrade --install beauty-front beauty-front/ -f ${{env.path_to_val}} --dry-run \
+          --set frontend.image.repository=${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DockerImageName }} \
+          --set frontend.image.tag=${{inputs.version}}
+
+    - name: Deploy Helm to cluster
+      run: |
+        ssh -i ~/.ssh/id_ed25519 developer@${{ vars.API_CLUSTER_HOST }} "helm upgrade --install beauty-front beauty-front/ \
+          --namespace ${{env.namespace}} \
+          -f ${{env.path_to_val}} \
+          --set frontend.image.repository=${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DockerImageName }} \
+          --set frontend.image.tag=${{inputs.version}}
