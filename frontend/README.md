@@ -1,2 +1,3 @@
 # beauty-ai-platform(frontend)
 test front workflow
+another test
