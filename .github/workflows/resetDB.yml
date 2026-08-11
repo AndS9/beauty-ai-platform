@@ -26,5 +26,13 @@ jobs:
           --name TestingVM \
           --command-id RunShellScript \
           --scripts "sudo /home/developer/flushdb.sh"
+
+    # - name: Create Djangosuperuser
+    #   run: |
+    #     az vm run-command invoke \
+    #       --resource-group beauty-app-rg \
+    #       --name TestingVM \
+    #       --command-id RunShellScript \
+    #       --scripts "docker exec beauty-web "
     
     
