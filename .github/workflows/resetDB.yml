@@ -25,6 +25,6 @@ jobs:
           --resource-group beauty-app-rg \
           --name TestingVM \
           --command-id RunShellScript \
-          --scripts "sudo systemctl status kubelet"
+          --scripts "sudo /home/developer/flushdb.sh"
     
     
