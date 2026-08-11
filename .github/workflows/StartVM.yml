@@ -17,3 +17,9 @@ jobs:
       uses: azure/login@v3
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Vm up
+      run: |
+        az vm start --resource-group beauty-app-rg --name TestingVM && \
+        echo "VM started"
+      
