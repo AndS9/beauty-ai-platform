@@ -21,10 +21,10 @@ jobs:
 
     - name: Reseting DB
       run: 
-        az vm run-command invoke \
-          --resource-group beauty-app-rg \
-          --name TestingVM \
-          --command-id RunShellScript \
+        az vm run-command invoke `
+          --resource-group beauty-app-rg `
+          --name TestingVM `
+          --command-id RunShellScript `
           --scripts "sudo /home/developer/flushdb.sh"
     
     
