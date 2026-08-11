@@ -20,11 +20,11 @@ jobs:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
     - name: Reseting DB
-      run: 
-        az vm run-command invoke `
-          --resource-group beauty-app-rg `
-          --name TestingVM `
-          --command-id RunShellScript `
+      run: |
+        az vm run-command invoke \
+          --resource-group beauty-app-rg \
+          --name TestingVM \
+          --command-id RunShellScript \
           --scripts "sudo /home/developer/flushdb.sh"
     
     
