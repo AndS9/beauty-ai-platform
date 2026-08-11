@@ -12,10 +12,10 @@ frontend:
   resources:
     requests:
       memory: "128Mi"
-      cpu: "150m"
+      cpu: "100m"
     limits:
       memory: "256Mi"
-      cpu: "300m"
+      cpu: "100m"
 
   config:
     backend_url: http://beautyaiservice.polandcentral.cloudapp.azure.com:8000
